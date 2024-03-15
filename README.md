@@ -13,7 +13,7 @@
 - [Erik Zamora](https://www.ezamorag.com)
 ## Installation
 ```bash
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ pccloner
+pip install pccloner
 ```
 ## Usage
 1. Write a python script with following lines:
