@@ -4,3 +4,4 @@ src/pccloner/__pycache__/replayer.cpython-310.pyc
 data/
 dist/
 viz/
+src/pccloner.egg-info/
