@@ -12,6 +12,7 @@ import datetime
 #   Make the same for smartphones
 #   avoid adsminitrator permissions on ubuntu
 #   The key identification for alt and other some keys will be changed from keyboard to keyboard 
+#   Upload data https://ragug.medium.com/how-to-upload-files-using-the-google-drive-api-in-python-ebefdfd63eab
 
 #   Make easy installation for windows users using pip install 
 
@@ -65,11 +66,11 @@ class Collector:
 
     def on_scroll(self, px, py, dx, dy):
         if dy == 1:
-            scroll = 'scroll_down' 
+            scroll = 'pressed Scroll.down' 
         elif dy == -1:
-            scroll = 'scroll_up'
+            scroll = 'pressed Scroll.up'
         else:
-            scroll = 'what?_scroll'
+            scroll = 'pressed Scroll.what?'
         self.savedata(px, py, event=scroll)
     
     # Keyboard events 
@@ -85,7 +86,7 @@ class Collector:
         px, py = self.mouse.position
         self.savedata(px, py, event=f'released {key}')
 
-    def savedata(self, px, py, event, trajectory=None):
+    def savedata(self, px, py, event, trajectory=[]):
         timestamp = time.perf_counter() - self.start_time
         t, img = self.lastscreen
         img_path = self.sample_folder + 'screen{:010}_{}.jpg'.format(self.counter, t)
