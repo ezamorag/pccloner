@@ -4,13 +4,12 @@ from PIL import Image, ImageDraw, ImageFont
 from pathlib import Path
 import pyautogui
 
-
 # No double clicks (SOLVED)
 # No drag actions (SOLVED) 
 # pcontroller is prepared for all keyboard events (almost SOLVED)
+# It has been tested only on Ubuntu 20.04 and windows 11  (almost SOLVED)
 
 # current limitations: 
-# It has been tested only on Ubuntu 20.04.
 # Not pressed two keys o more at the same time
 # Verify the current initial screen is compatable with the recorded initial screen.  
 # Allow compounding tasks for big ones.  

@@ -35,7 +35,7 @@ class Collector:
 
         print("Monitoring is working ...")
         self.movelistener.start()  
-        self.date = str(datetime.datetime.now()).split('.')[0]
+        self.date = str(datetime.datetime.now()).split('.')[0].replace(':','-').replace(' ','_')
         self.running = True
         self.start_time = time.perf_counter()
         self.lastscreen = (time.perf_counter() - self.start_time, pyautogui.screenshot())
