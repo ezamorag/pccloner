@@ -1,7 +1,8 @@
 
-src/pccloner/__pycache__/__init__.cpython-310.pyc
-src/pccloner/__pycache__/replayer.cpython-310.pyc
+src/pccloner/__pycache__/
 data/
 dist/
 viz/
 src/pccloner.egg-info/
+archive/
+testing_data/

@@ -1,13 +1,15 @@
 # pccloner
  When you perform a task on your PC, it stores mouse and keyboard actions along with the concurrent cursor position (and preceding screenshot) and then you can replay the stored task when you want. 
-
- Current limitations: 
- * No drag actions 
- * Not pressed two keys o more at the same time
- * The replayer is not prepared for all events
- * It has been tested only on Ubuntu 20.04.
- * The initial screen state at replaying must be similar to the stored initial screen state. 
- * Your replayed task performs well on the same computer with similar conditions.  
+ 
+Supported features: 
+ * It can replay double clicks and drag motions
+ * It is prepared to replay almost all single keyboard events (please report to me if you find one not supported) 
+ * It has been tested on Ubuntu 20.04 and Windows 11.
+ 
+Current limitations: 
+ * Hotkeys are not supported. 
+ * The initial screen state at replaying must be similar to the stored initial screen state to work well. 
+ * Store task must be replayed in the same computer.
 
 ## Authors
 - [Erik Zamora](https://www.ezamorag.com)
@@ -15,6 +17,11 @@
 ```bash
 pip install pccloner
 ```
+On ubuntu: it requires to install gnome-screenshot.
+```bash
+sudo apt install gnome-screenshot
+```
+
 ## Usage
 1. Write a python script with following lines:
 ```bash

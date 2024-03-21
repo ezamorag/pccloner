@@ -35,7 +35,7 @@ class Collector:
 
         print("Monitoring is working ...")
         self.movelistener.start()  
-        self.date = datetime.datetime.now()
+        self.date = str(datetime.datetime.now()).split('.')[0]
         self.running = True
         self.start_time = time.perf_counter()
         self.lastscreen = (time.perf_counter() - self.start_time, pyautogui.screenshot())
@@ -46,7 +46,7 @@ class Collector:
         print("Monitoring was ended ...")
 
         data_df = pd.DataFrame(self.data, columns =['timestamp', 'img_path', 'px', 'py', 'event', 'trajectory'])
-        data_df.to_csv(self.sample_folder + f'rawdata_{self.date}.csv')
+        data_df.to_csv(self.sample_folder + f'raw_pcdata_{self.date}.csv')
         self.movelistener.stop()
 
     # Mouse events
