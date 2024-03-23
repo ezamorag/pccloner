@@ -1,15 +1,13 @@
 # pccloner
- When you perform a task on your PC, it stores mouse and keyboard actions along with the concurrent cursor position (and preceding screenshot) and then you can replay the stored task when you want. 
+When you execute a task on your PC, it captures mouse and keyboard actions, including the cursor's position and a preceding screenshot. You can then replay the captured task whenever desired.
  
-Supported features: 
- * It can replay double clicks and drag motions
- * It is prepared to replay almost all single keyboard events (please report to me if you find one not supported) 
- * It has been tested on Ubuntu 20.04 and Windows 11.
- 
-Current limitations: 
- * Hotkeys are not supported. 
- * The initial screen state at replaying must be similar to the stored initial screen state to work well. 
- * Store task must be replayed in the same computer.
+Supported Features:
+* Capable of replaying double clicks and drag motions.
+* Designed to replay almost all keystrokes (please report any unsupported key).
+* Tested on Ubuntu 20.04 and Windows 11.
+* Supports most common hotkeys (please report any unsupported hotkey).
+
+**Conditions for Optimal Performance**: The stored task must be replayed on the same computer, and the screen's initial state during replay should closely resemble the initially stored screen state.
 
 ## Authors
 - [Erik Zamora](https://www.ezamorag.com)

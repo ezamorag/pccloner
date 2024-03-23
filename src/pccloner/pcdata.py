@@ -66,11 +66,11 @@ class Collector:
 
     def on_scroll(self, px, py, dx, dy):
         if dy == 1:
-            scroll = 'pressed Scroll.down' 
+            scroll = 'Scroll.down' 
         elif dy == -1:
-            scroll = 'pressed Scroll.up'
+            scroll = 'Scroll.up'
         else:
-            scroll = 'pressed Scroll.what?'
+            scroll = 'Scroll.what?'
         self.savedata(px, py, event=scroll)
     
     # Keyboard events 

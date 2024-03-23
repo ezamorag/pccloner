@@ -6,13 +6,14 @@ import pyautogui
 
 # No double clicks (SOLVED)
 # No drag actions (SOLVED) 
-# pcontroller is prepared for all keyboard events (almost SOLVED)
+# pcontroller is prepared for all keyboard events (SOLVED form most common cases)
 # It has been tested only on Ubuntu 20.04 and windows 11  (almost SOLVED)
+# Not pressed two keys or more at the same time (SOLVED for most cases). No include mouse actions. 
 
-# current limitations: 
-# Not pressed two keys o more at the same time
+# Future work:
 # Verify the current initial screen is compatable with the recorded initial screen.  
 # Allow compounding tasks for big ones.  
+# Test it on different keyboards and OS.
  
 class Replayer():
     def __init__(self, sample, data_dir):
@@ -83,44 +84,61 @@ class pcController():
                 '<269025048>': ['f4'], 
                 '<269025062>': ['f6'],  
                 '<65027>': ['alt_gr'], 
-                '<65056>': ['shift_r', 'tab'],
+                '<65056>': ['shift_r', 'tab'], # The special case complicates the code !!
                 "['´']": [],   # tilde
                 "['¨']": [],   # tilde con shift_r
                 '"\'"': ["'"],   
             }
 
     def run(self, action, position, endposition, delay): 
+        # Hotkeys
+        if '+' in action: 
+            hotkeys = [self.classify_keystroke(hotkey)[0] for hotkey in action.split('+')] # The special case of '<65056>' is ignored
+            for key in hotkeys:
+                self.keyboard.press(key)
+            for key in hotkeys[::-1]:
+                self.keyboard.release(key)
         # Mouse
-        if "Button." in action or "Scroll." in action:
+        elif "Button." in action or "Scroll." in action:
             self.mouse_mapping.get(action, self.none_mouse)(position, endposition)
-        # Writing
-        elif len(action) == 1:
-            self.push(action)
+        # Single key
+        else:
+            keys = self.classify_keystroke(action)
+            if len(keys) == 1:  
+                self.push(keys[0])
+            elif len(keys) == 2:
+                with self.keyboard.pressed(keys[0]):
+                    self.push(keys[1])
+            else:
+                print('This keystroke was not execute', action)
+        time.sleep(delay)
+
+    def classify_keystroke(self, action):
+        keys = []
+        # Writing a char
+        if len(action) == 1:
+            keys.append(action)
         # Known Keys
         elif "Key." in action:
             keyname = action.replace('Key.','')
             if keyname in Key.__dict__.keys():    
-                button = Key.__dict__[keyname]
-                self.push(button)
+                keys.append(Key.__dict__[keyname])
             else:
-                print("invalid key action", action)
+                print("invalid key action", action)  
         # Unknown keys 
         elif action in self.umapping.keys():      
             key_sequence = self.umapping[action]
             if len(key_sequence) == 1: 
                 if key_sequence[0] == "'":  
-                    self.push("'")
+                    keys.append("'")
                 else: 
-                    button = Key.__dict__[key_sequence[0]]
-                    self.push(button)
+                    keys.append(Key.__dict__[key_sequence[0]])
             elif len(key_sequence) == 2: 
-                button1 = Key.__dict__[key_sequence[0]]
-                button2 = Key.__dict__[key_sequence[1]]
-                with self.keyboard.pressed(button1):
-                    self.push(button2)           
+                keys.append(Key.__dict__[key_sequence[0]])
+                keys.append(Key.__dict__[key_sequence[1]])   
         else:
             print(f'The action {action} is not a key, not a mouse, not a char')
-        time.sleep(delay)
+        return keys 
 
     def push(self, button):
         self.keyboard.press(button)
@@ -152,7 +170,7 @@ class pcController():
         self.mouse.release(Button.left)
 
     def leftdrag_following(self, position, trajectory):
-        """ It's working but I'm not sure about its reliablity and it's slower """
+        """ It's working but I'm not sure about its reliablity and it's slower, use pyautogui_leftdrag instead """
         self.mouse.position = position
         self.mouse.press(Button.left)
         t0 = trajectory[0][0] - 0.2  # use the correct initial time
@@ -161,7 +179,6 @@ class pcController():
             self.mouse.position = (x,y)
             t0 = t
         self.mouse.release(Button.left)
-
 
     def clickright(self, position):
         self.mouse.position = position
@@ -175,6 +192,8 @@ class pcController():
         self.mouse.position = position
         self.mouse.scroll(0, 1)
 
+# A simpler approach would be not to do this preprocessing and do replay including releases
+# Avoiding hoykey, double clicks and drags detections 
 class Preprocessing():
     def __init__(self, length_th, minpixels_th, dt_th, maxpixels_th): 
         # The thresholds for drag and doubleclicks detection determine the correct replay of task, how important are to calibrate them? 
@@ -187,16 +206,69 @@ class Preprocessing():
         self.maxpixels_th = maxpixels_th
 
     def run(self, sample): 
-        sample['trajectory'] = sample['trajectory'].map(lambda x: self.string2list(x))    # Convert a list represented as a string into a actual list
-        sample = self.replace_drags(sample)                                               # Detect drag events
-        actions = sample[sample['event'].map(lambda x: 'pressed' in x)].copy()            # Select pressed events only
-        actions = self.replace_doubleclicks(actions)                                      # Detect double clicks
+        sample = self.replace_hotkeys(sample)                                                           # Detect hotkeys
+        sample['trajectory'] = sample['trajectory'].map(lambda x: self.string2list(x))                  # Convert a list represented as a string into a actual list
+        sample = self.replace_drags(sample)                                                             # Detect drag events
+        actions = sample[sample['event'].map(lambda x: ('pressed' in x) or ('Scroll.' in x))].copy()    # Select pressed and scroll events
+        actions = self.replace_doubleclicks(actions)                                                    # Detect double clicks
         actions['event'] = actions['event'].map(lambda x: x.replace('pressed ',''))       # Remove pressed string
         delays = actions['timestamp'][1:].values - actions['timestamp'][0:-1].values      # Calculating delays
         delays = np.append(delays,0.0)                                                
         actions['delay'] = delays
         actions = actions.reset_index(drop=True)                                          # Reset dataframe index
         return actions
+    
+    def replace_hotkeys(self, sample):
+        samplecopy = sample.copy()
+        for ix, ixN in self.find_hotkeys(samplecopy):
+            ixs_pressed = sample[ix:ixN].index[sample['event'][ix:ixN].map(lambda x: 'pressed' in x)]
+            newevent = 'pressed ' + samplecopy.loc[ixs_pressed[0], 'event'].replace('pressed ', '')
+            # event1 + ... + eventN
+            if self.are_pressedkeys_consecutive(ixs_pressed.tolist()): 
+                for ix_pressed in ixs_pressed[1:]: 
+                    newevent += '+' + samplecopy.loc[ix_pressed, 'event'].replace('pressed ', '')
+                samplecopy.loc[ixs_pressed[-1], 'event'] = newevent
+                remove_ixs = ixs_pressed[:-1].tolist() + sample[ix:ixN+1].index[sample['event'][ix:ixN+1].map(lambda x: 'released' in x)].tolist()
+                samplecopy = samplecopy.drop(remove_ixs)
+            # event1 + {event2 + ... + eventN}
+            elif self.are_sequentialhotkeys(ixs_pressed[1:].tolist()):
+                for ix_pressed in ixs_pressed[1:]:
+                    samplecopy.loc[ix_pressed, 'event'] = newevent + '+' + samplecopy.loc[ix_pressed, 'event'].replace('pressed ', '')
+                    samplecopy = samplecopy.drop([ix_pressed+1])
+                samplecopy = samplecopy.drop([ixs_pressed[0], ixN])
+            # Other cases are not include: like event1 + event2 + {event3 + ... + eventN}
+            else:
+                # what to do? Nothing. 
+                pass
+        return samplecopy 
+    
+    def are_sequentialhotkeys(self, numbers_sorted):   
+        for i in range(len(numbers_sorted) - 1):
+            if numbers_sorted[i] + 2 != numbers_sorted[i + 1]:
+                return False
+        return True
+    
+    def are_pressedkeys_consecutive(self, numbers_sorted):   
+        for i in range(len(numbers_sorted) - 1):
+            if numbers_sorted[i] + 1 != numbers_sorted[i + 1]:
+                return False
+        return True
+    
+    def find_hotkeys(self, sample):
+        ixs_pressed = sample.index[sample['event'].map(lambda x: 'pressed' in x)].tolist()
+        hotkeys_indexes = []
+        while len(ixs_pressed) >= 2:  # To not include the end Key.esc
+            ix = ixs_pressed[0]
+            released1 = sample['event'][ix].replace('pressed', 'released')
+            ixN = sample[ix:].index[sample['event'][ix:] == released1][0]
+            if ixN - ix >= 3:  # 3 para evitar que al escribir aparecan hotkeys Cuidado!! es una condicion debil
+                hotkeys_indexes.append((ix, ixN))
+            for i in range(ix,ixN):
+                try: 
+                    ixs_pressed.remove(i)
+                except:
+                    pass
+        return hotkeys_indexes
 
     def string2list(self, string): 
         """ Convert the trajectory string into an actual python list"""
