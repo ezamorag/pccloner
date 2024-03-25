@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from pathlib import Path
 import pyautogui
+from pynput import keyboard
 
 # No double clicks (SOLVED)
 # No drag actions (SOLVED) 
@@ -10,10 +11,19 @@ import pyautogui
 # It has been tested only on Ubuntu 20.04 and windows 11  (almost SOLVED)
 # Not pressed two keys or more at the same time (SOLVED for most cases). No include mouse actions. 
 
+
 # Future work:
-# Verify the current initial screen is compatable with the recorded initial screen.  
-# Allow compounding tasks for big ones.  
-# Test it on different keyboards and OS.
+# Known failures: 
+#      1) SOMETIMES, I think that save one scroll.down more that it needs 
+#      2) Hotkeys sequences: e1 + [(e7+e2) + e5 + (e7+e4)]  
+#      3) Sometimes, to minimize a window, change the size and location of the window (we do not have control about it)
+# Mandatory: Test it on different keyboards and OS.
+# Nice to have:
+#    Add duration for drags action
+#    Verify the current initial screen is compatable with the recorded initial screen.  
+#    Allow compounding tasks for big ones.  
+
+
  
 class Replayer():
     def __init__(self, sample, data_dir):
@@ -21,11 +31,16 @@ class Replayer():
         self.data_dir = data_dir
         self.processing = Preprocessing(length_th = 5, minpixels_th = 1, dt_th = 0.22, maxpixels_th = 0)
         self.pccontroller = pcController()
-        
-    def execute(self, viz=False, screen_flag=True):
+       
+    def execute(self, viz, screen_flag):
+        self.running = True
+        exitlistener = keyboard.Listener(on_press=self.on_press)
         self.actions = self.processing.run(self.sample)
         time.sleep(2)
+        exitlistener.start()
         for index, action in self.actions.iterrows():
+            if self.running == False:
+                break
             if viz == True: 
                 self.viz_actions(index, action, screen_flag)
             self.pccontroller.run(action = action['event'], 
@@ -33,7 +48,12 @@ class Replayer():
                                   endposition = (action['drag2px'], action['drag2py']), 
                                   #endposition = action['trajectory'], 
                                   delay = action['delay']) 
+        exitlistener.stop()
         pyautogui.alert('The execution has been terminated.')
+
+    def on_press(self, key):
+        if key == keyboard.Key.esc: 
+            self.running = False
 
     def viz_actions(self, index, action, screen_flag):
         """ Tool for debugging actions """
@@ -71,7 +91,6 @@ class pcController():
         self.keyboard = kController()
         self.mouse_mapping = {
                 'Button.left': lambda position, *args: self.clickleft(position),
-                #'Button.left.double': lambda position, *args: pyautogui.doubleClick(x=position[0],y=position[1]),
                 'Button.left.double': lambda position, *args: self.doubleclickleft(position),
                 'Button.left.drag': lambda position, endposition: self.pyautogui_leftdrag(position, endposition), 
                 #'Button.left.drag': lambda position, trajectory: self.leftdrag_following(position, trajectory),  
@@ -150,11 +169,11 @@ class pcController():
 
     def doubleclickleft(self, position):
         self.mouse.position = position
-        self.mouse.click(Button.left, 2)
+        pyautogui.click(button='left', clicks=2, interval=0.25)
 
     def pyautogui_leftdrag(self, position, endposition):
         self.mouse.position = position
-        pyautogui.dragTo(endposition[0], endposition[1], 0.6, button='left')
+        pyautogui.dragTo(endposition[0], endposition[1], 2.0, button='left')  # Enough duration is important for reliability
 
     def leftdrag(self, position, endposition):
         """ this function is NOT reliable, use pyautogui_leftdrag instead """
@@ -186,11 +205,11 @@ class pcController():
 
     def scrollup(self, position):
         self.mouse.position = position
-        self.mouse.scroll(0, -1)
+        self.mouse.scroll(0, 1)
 
     def scrolldown(self, position):
         self.mouse.position = position
-        self.mouse.scroll(0, 1)
+        self.mouse.scroll(0, -1)
 
 # A simpler approach would be not to do this preprocessing and do replay including releases
 # Avoiding hoykey, double clicks and drags detections 

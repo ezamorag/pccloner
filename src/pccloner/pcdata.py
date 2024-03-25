@@ -26,6 +26,7 @@ class Collector:
         self.movelistener = mouse.Listener(on_move=self.on_move)
         self.movesflag = False
         self.base_folder = base_folder
+        self.scrolls = {-1: 'Scroll.down', 1:'Scroll.up'}
         self.sample_folder = self.create_incremented_folder(self.base_folder) + '/' 
         
     # Monitoring
@@ -65,26 +66,25 @@ class Collector:
             self.savedata(px, py, event=f'released {button}', trajectory=self.moves)
 
     def on_scroll(self, px, py, dx, dy):
-        if dy == 1:
-            scroll = 'Scroll.down' 
-        elif dy == -1:
-            scroll = 'Scroll.up'
-        else:
-            scroll = 'Scroll.what?'
-        self.savedata(px, py, event=scroll)
+        try:
+            self.savedata(px, py, event=self.scrolls[dy])
+        except:
+            print(dy, type(dy))
     
     # Keyboard events 
     def on_press(self, key):
-        if key == keyboard.Key.esc: 
+        if key != keyboard.Key.esc: 
+            key = str(key).strip("'")
+            px, py = self.mouse.position
+            self.savedata(px, py, event=f'pressed {key}')
+        else: 
             self.running = False
-        key = str(key).strip("'")
-        px, py = self.mouse.position
-        self.savedata(px, py, event=f'pressed {key}')
-        
+            
     def on_release(self, key):
-        key = str(key).strip("'")
-        px, py = self.mouse.position
-        self.savedata(px, py, event=f'released {key}')
+        if key != keyboard.Key.esc: 
+            key = str(key).strip("'")
+            px, py = self.mouse.position
+            self.savedata(px, py, event=f'released {key}')
 
     def savedata(self, px, py, event, trajectory=[]):
         timestamp = time.perf_counter() - self.start_time
