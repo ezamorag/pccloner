@@ -9,6 +9,11 @@ Supported Features:
 
 **Conditions for Optimal Performance**: The stored task must be replayed on the same computer, and the screen's initial state during replay should closely resemble the initially stored screen state.
 
+Known Issues:
+* Occasionally, the collector records one additional scroll-down action than necessary.
+* It is unable to accurately replay specific sequences of hotkeys such as: key1 + [(key2+key3) + key4 + (key5+key6)]. The replayer functions correctly when these sequences are separated by the release of previous keys such as: (key1+key2+key3), (key1+key4), (key1+key5+key6). 
+* Sometimes, in the process of minimizing a window, the size and location of the window are altered without our control. The replayer could fail in this case. 
+
 ## Authors
 - [Erik Zamora](https://www.ezamorag.com)
 ## Installation
@@ -33,7 +38,7 @@ pc.start()
 2. Run the previous script. On Ubuntu: ```sudo [your python path here] collector.py```. Or on Windows: ```python collector.py```
 3. Press the ESC key to start recording. And don't forget to press again the ESC key to terminate the recording. This code will create a folder called "data" where it will save all the data related to your task. Note: On Ubuntu, it is useful, not necesary, to change the permissions of the data folder with ```sudo chown -R $USER:$USER data/```
 
-4. Use the following example to replay your previous stored task. 
+4. Use the following example to replay your previous stored task. At replaying, you can exit the process pressing ESC. 
 ```bash
 from pccloner.pctask import Replayer
 import pandas as pd
