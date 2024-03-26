@@ -5,14 +5,13 @@ Supported Features:
 * Capable of replaying double clicks and drag motions.
 * Designed to replay almost all keystrokes (please report any unsupported key).
 * Tested on Ubuntu 20.04 and Windows 11.
-* Supports most common hotkeys (please report any unsupported hotkey).
+* Supports all hotkeys and sequences of hotkeys (please report any unsupported hotkey).
 
 **Conditions for Optimal Performance**: The stored task must be replayed on the same computer, and the screen's initial state during replay should closely resemble the initially stored screen state.
 
 Known Issues:
-* Occasionally, the collector records one additional scroll-down action than necessary.
-* It is unable to accurately replay specific sequences of hotkeys such as: key1 + [(key2+key3) + key4 + (key5+key6)]. The replayer functions correctly when these sequences are separated by the release of previous keys such as: (key1+key2+key3), (key1+key4), (key1+key5+key6). 
-* Sometimes, in the process of minimizing a window, the size and location of the window are altered without our control. The replayer could fail in this case. 
+* Occasionally, the collector records one additional scroll-down action than necessary. This produces not replaying well the task. 
+* Sometimes, in the process of minimizing a window, the size and location of the window are different w.r.t the original stored task. The replayer could fail in this case. 
 
 ## Authors
 - [Erik Zamora](https://www.ezamorag.com)

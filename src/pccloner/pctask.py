@@ -10,13 +10,12 @@ from pynput import keyboard
 # pcontroller is prepared for all keyboard events (SOLVED form most common cases)
 # It has been tested only on Ubuntu 20.04 and windows 11  (almost SOLVED)
 # Not pressed two keys or more at the same time (SOLVED for most cases). No include mouse actions. 
-
+# Hotkeys sequences: e1 + [(e7+e2) + e5 + (e7+e4)]    (SOLVED) 
 
 # Future work:
 # Known failures: 
 #      1) SOMETIMES, I think that save one scroll.down more that it needs 
-#      2) Hotkeys sequences: e1 + [(e7+e2) + e5 + (e7+e4)]  
-#      3) Sometimes, to minimize a window, change the size and location of the window (we do not have control about it)
+#      2) Sometimes, to minimize a window, change the size and location of the window (we do not have control about it)
 # Mandatory: Test it on different keyboards and OS.
 # Nice to have:
 #    Add duration for drags action
