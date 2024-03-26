@@ -4,7 +4,7 @@ When you execute a task on your PC, it captures mouse and keyboard actions, incl
 Supported Features:
 * Capable of replaying double clicks and drag motions.
 * Designed to replay almost all keystrokes (please report any unsupported key).
-* Tested on Ubuntu 20.04 and Windows 11.
+* Tested on Ubuntu 20.04.
 * Supports all hotkeys and sequences of hotkeys (please report any unsupported hotkey).
 
 **Conditions for Optimal Performance**: The stored task must be replayed on the same computer, and the screen's initial state during replay should closely resemble the initially stored screen state.
