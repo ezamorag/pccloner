@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='pccloner',
-    version='0.0.10',
+    version='0.0.11',
     description= "Clone your repetitive PC tasks",
     py_modules = ['pccloner.pcdata', 'pccloner.pctask'],
     packages = find_packages(),
