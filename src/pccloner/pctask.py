@@ -238,40 +238,43 @@ class Preprocessing():
         return actions
     
     def replace_hotkeys(self, sample):
+        """ Replace rows in the sample by hotkey events """
+        # The key insight: consecutive pressed events form a hotkey. 
+        # And the number of releases (di) between groups of consective pressed events determine the keys that are keeping press (basepressed). 
         samplecopy = sample.copy()
         for ix, ixN in self.find_hotkeys(samplecopy):
             ixs_pressed = sample[ix:ixN].index[sample['event'][ix:ixN].map(lambda x: 'pressed' in x)]
-            newevent = 'pressed ' + samplecopy.loc[ixs_pressed[0], 'event'].replace('pressed ', '')
-            # event1 + ... + eventN
-            if self.are_pressedkeys_consecutive(ixs_pressed.tolist()): 
-                for ix_pressed in ixs_pressed[1:]: 
-                    newevent += '+' + samplecopy.loc[ix_pressed, 'event'].replace('pressed ', '')
-                samplecopy.loc[ixs_pressed[-1], 'event'] = newevent
-                remove_ixs = ixs_pressed[:-1].tolist() + sample[ix:ixN+1].index[sample['event'][ix:ixN+1].map(lambda x: 'released' in x)].tolist()
-                samplecopy = samplecopy.drop(remove_ixs)
-            # event1 + {event2 + ... + eventN}
-            elif self.are_sequentialhotkeys(ixs_pressed[1:].tolist()):
-                for ix_pressed in ixs_pressed[1:]:
-                    samplecopy.loc[ix_pressed, 'event'] = newevent + '+' + samplecopy.loc[ix_pressed, 'event'].replace('pressed ', '')
-                    samplecopy = samplecopy.drop([ix_pressed+1])
-                samplecopy = samplecopy.drop([ixs_pressed[0], ixN])
-            # Other cases are not include: like event1 + event2 + {event3 + ... + eventN}
-            else:
-                # what to do? Nothing. 
-                pass
+            pgroups = self.group_consecutive(ixs_pressed)  # Groups of consecutive position indexes of pressed events 
+            keep_ixs = []
+            basepressed = []
+            for i in range(len(pgroups)): 
+                pgroup = basepressed + pgroups[i]
+                newevent = 'pressed ' + samplecopy.loc[pgroup[0], 'event'].replace('pressed ', '')
+                for ki in pgroup[1:]: 
+                    newevent += '+' + samplecopy.loc[ki, 'event'].replace('pressed ', '')
+                samplecopy.loc[pgroup[-1], 'event'] = newevent
+                keep_ixs.append(pgroup[-1])
+                if i+1 < len(pgroups):
+                    di = pgroups[i+1][0] - pgroup[-1] - 1
+                    basepressed = pgroup[:-di]
+            # Remove rows
+            remove_ixs = [i for i in range(ix,ixN+1)]
+            [remove_ixs.remove(i) for i in keep_ixs]
+            samplecopy = samplecopy.drop(remove_ixs)
         return samplecopy 
     
-    def are_sequentialhotkeys(self, numbers_sorted):   
-        for i in range(len(numbers_sorted) - 1):
-            if numbers_sorted[i] + 2 != numbers_sorted[i + 1]:
-                return False
-        return True
-    
-    def are_pressedkeys_consecutive(self, numbers_sorted):   
-        for i in range(len(numbers_sorted) - 1):
-            if numbers_sorted[i] + 1 != numbers_sorted[i + 1]:
-                return False
-        return True
+    def group_consecutive(self, numbers):
+        """ Making groups of consecutive numbers """ # numbers list cannot be empty by design.
+        groups = []
+        current_group = [numbers[0]]
+        for i in range(1, len(numbers)):
+            if numbers[i] == numbers[i-1] + 1:
+                current_group.append(numbers[i])
+            else:
+                groups.append(current_group)
+                current_group = [numbers[i]]
+        groups.append(current_group)
+        return groups
     
     def find_hotkeys(self, sample):
         ixs_pressed = sample.index[sample['event'].map(lambda x: 'pressed' in x)].tolist()
@@ -280,7 +283,7 @@ class Preprocessing():
             ix = ixs_pressed[0]
             released1 = sample['event'][ix].replace('pressed', 'released')
             ixN = sample[ix:].index[sample['event'][ix:] == released1][0]
-            if ixN - ix >= 3:  # 3 para evitar que al escribir aparecan hotkeys Cuidado!! es una condicion debil
+            if ixN - ix >= 3:  # 3 para evitar que al escribir aparezcan hotkeys. Cuidado!! es una condicion debil
                 hotkeys_indexes.append((ix, ixN))
             for i in range(ix,ixN):
                 try: 
