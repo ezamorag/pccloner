@@ -242,8 +242,8 @@ class Preprocessing():
         # And the number of releases (di) between groups of consective pressed events determine the keys that are keeping press (basepressed). 
         samplecopy = sample.copy()
         for ix, ixN in self.find_hotkeys(samplecopy):
-            ixs_pressed = sample[ix:ixN].index[sample['event'][ix:ixN].map(lambda x: 'pressed' in x)]
-            pgroups = self.group_consecutive(ixs_pressed)  # Groups of consecutive position indexes of pressed events 
+            ixs_pressed = sample.loc[ix:ixN].index[sample.loc[ix:ixN,'event'].map(lambda x: 'pressed' in x)].tolist()
+            pgroups = self.group_consecutive(ixs_pressed)  # Groups of consecutive position indexes of pressed events
             keep_ixs = []
             basepressed = []
             for i in range(len(pgroups)): 
@@ -281,7 +281,7 @@ class Preprocessing():
         while len(ixs_pressed) >= 2:  # To not include the end Key.esc
             ix = ixs_pressed[0]
             released1 = sample['event'][ix].replace('pressed', 'released')
-            ixN = sample[ix:].index[sample['event'][ix:] == released1][0]
+            ixN = sample.loc[ix:].index[sample.loc[ix:,'event'] == released1][0]
             if ixN - ix >= 3:  # 3 para evitar que al escribir aparezcan hotkeys. Cuidado!! es una condicion debil
                 hotkeys_indexes.append((ix, ixN))
             for i in range(ix,ixN):
