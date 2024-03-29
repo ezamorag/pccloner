@@ -42,7 +42,7 @@ class Replayer():
                 break
             if viz == True: 
                 self.viz_actions(index, action, screen_flag)
-            self.pccontroller.run(action = action['event'], 
+            self.pccontroller.run(event = action['event'], 
                                   position = (action['px'], action['py']), 
                                   endposition = (action['drag2px'], action['drag2py']), 
                                   #endposition = action['trajectory'], 
@@ -99,25 +99,29 @@ class pcController():
             }
         self.none_mouse = lambda position, endposition: print("invalid mouse action")
 
-    def run(self, action, position, endposition, delay): 
-        # Hotkeys
-        if '+' in action: 
-            hotkeys = [self.classify_keystroke(hotkey)[0] for hotkey in action.split('+')] 
-            for key in hotkeys:
+    def run(self, event, position, endposition, delay): 
+        actions = event.split('+')
+        # Press
+        for action in actions:
+            if self.is_mouse(action): 
+                self.mouse_mapping.get(action, self.none_mouse)(position, endposition)
+            else: 
+                key = self.classify_keystroke(action)[0]
                 self.keyboard.press(key)
-            for key in hotkeys[::-1]:
-                self.keyboard.release(key)
-        # Mouse
-        elif "Button." in action or "Scroll." in action:
-            self.mouse_mapping.get(action, self.none_mouse)(position, endposition)
-        # Single key
-        else:
-            keys = self.classify_keystroke(action)
-            if len(keys) == 1:  
-                self.push(keys[0])
+        # Release
+        for action in actions[::-1]:
+            if self.is_mouse(action): 
+                pass
             else:
-                print('This keystroke was not execute ->', action)
+                key = self.classify_keystroke(action)[0]
+                self.keyboard.release(key)
         time.sleep(delay)
+    
+    def is_mouse(self, action):
+        if 'Button.' in action or "Scroll." in action:
+            return True
+        else: 
+            return False
 
     def classify_keystroke(self, action):
         keys = []
@@ -135,10 +139,6 @@ class pcController():
         else:
             print(f'The action {action} is unknown key')
         return keys 
-
-    def push(self, button):
-        self.keyboard.press(button)
-        self.keyboard.release(button)
 
     def clickleft(self, position):
         self.mouse.position = position
@@ -202,25 +202,28 @@ class Preprocessing():
         self.maxpixels_th = maxpixels_th
 
     def run(self, sample): 
-        sample = self.replace_hotkeys(sample)                                                           # Detect hotkeys
-        sample['trajectory'] = sample['trajectory'].map(lambda x: self.string2list(x))                  # Convert a list represented as a string into a actual list
-        sample = self.replace_drags(sample)                                                             # Detect drag events
-        actions = sample[sample['event'].map(lambda x: ('pressed' in x) or ('Scroll.' in x))].copy()    # Select pressed and scroll events
-        actions = self.replace_doubleclicks(actions)                                                    # Detect double clicks
-        actions['event'] = actions['event'].map(lambda x: x.replace('pressed ',''))       # Remove pressed string
-        delays = actions['timestamp'][1:].values - actions['timestamp'][0:-1].values      # Calculating delays
+        s1 = sample.copy()                                                             
+        s1['trajectory'] = s1['trajectory'].map(lambda x: self.string2list(x))      # Convert a list represented as a string into a actual list
+        s1 = self.replace_drags(s1)                                                 # Detect drag events
+        s1 = self.replace_doubleclicks(s1)                                          # Detect doubleclicks
+        s1 = self.replace_hotkeys(s1)                                               # Detect hotkeys and combinations
+        s1 = s1[s1['event'].map(lambda x: ('pressed' in x) or ('Scroll.' in x))].copy()   # Select pressed and scroll events
+        s1['event'] = s1['event'].map(lambda x: x.replace('pressed ',''))                 # Remove pressed string
+        delays = s1['timestamp'][1:].values - s1['timestamp'][0:-1].values                # Calculating delays
         delays = np.append(delays,0.0)                                                
-        actions['delay'] = delays
-        actions = actions.reset_index(drop=True)                                          # Reset dataframe index
+        s1['delay'] = delays
+        actions = s1.reset_index(drop=True)                                     # Reset dataframe index
         return actions
     
     def replace_hotkeys(self, sample):
         """ Replace rows in the sample by hotkey events """
         # The key insight: consecutive pressed events form a hotkey. 
         # And the number of releases (di) between groups of consective pressed events determine the keys that are keeping press (basepressed). 
+        # Note: Remove their corresponding releases
         samplecopy = sample.copy()
+        samplecopy = samplecopy.reset_index(drop=True) 
         for ix, ixN in self.find_hotkeys(samplecopy):
-            ixs_pressed = sample.loc[ix:ixN].index[sample.loc[ix:ixN,'event'].map(lambda x: 'pressed' in x)].tolist()
+            ixs_pressed = samplecopy.loc[ix:ixN].index[samplecopy.loc[ix:ixN,'event'].map(lambda x: 'pressed' in x)].tolist()
             pgroups = self.group_consecutive(ixs_pressed)  # Groups of consecutive position indexes of pressed events
             keep_ixs = []
             basepressed = []
@@ -289,13 +292,15 @@ class Preprocessing():
         samplecopy['drag2py'] = len(samplecopy)*[None]
         for ix in self.find_drags(sample):
             samplecopy.loc[ix, 'event'] = 'pressed Button.left.drag'
+            samplecopy.loc[ix+1, 'event'] = 'released Button.left.drag'
             samplecopy.loc[ix, 'drag2px'] = sample.loc[ix+1, 'px']
             samplecopy.loc[ix, 'drag2py'] = sample.loc[ix+1, 'py']
             samplecopy.at[ix, 'trajectory'] = sample.loc[ix+1, 'trajectory']
+            samplecopy.at[ix+1, 'trajectory'] = []
         return samplecopy
     
     def find_drags(self, sample):
-        rBleft_indexes = sample.index[sample['event'].map(lambda x: 'released Button.left' in x)]
+        rBleft_indexes = sample.index[sample['event'].map(lambda x: 'released Button.left' == x)]
         drags_indexes = []
         for ix in rBleft_indexes:
             length = len(sample.loc[ix,'trajectory'])
@@ -310,11 +315,12 @@ class Preprocessing():
         samplecopy = sample.copy()
         for ix0,ix1 in self.find_doubleclicks(sample):
             samplecopy.loc[ix0, 'event'] = 'pressed Button.left.double'
-            samplecopy = samplecopy.drop([ix1])
+            samplecopy.loc[ix1+1, 'event'] = 'released Button.left.double'
+            samplecopy = samplecopy.drop([ix0+1, ix1])
         return samplecopy
 
     def find_doubleclicks(self, sample):
-        pBleft_indexes = sample.index[sample['event'].map(lambda x: 'pressed Button.left' in x)].tolist()
+        pBleft_indexes = sample.index[sample['event'].map(lambda x: 'pressed Button.left' == x)].tolist()
         dclicks_indexes = []
         while len(pBleft_indexes) > 1:
             ix0, ix1 = pBleft_indexes[0], pBleft_indexes[1]

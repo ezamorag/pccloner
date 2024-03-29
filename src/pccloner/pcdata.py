@@ -62,6 +62,8 @@ class Collector:
         data_df.to_csv(self.sample_folder + f'raw_pcdata_{self.date}.csv', index=False)
         self.movelistener.stop()
 
+        return data_df
+
     # Mouse events
     def on_move(self, x, y):
         if self.movesflag == True:

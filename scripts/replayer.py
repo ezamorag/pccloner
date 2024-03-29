@@ -6,7 +6,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--csvpath', help="path to the task data")
 parser.add_argument('--viz', action=argparse.BooleanOptionalAction, default=False, help="To visualize actions")
-parser.add_argument('--screen', action=argparse.BooleanOptionalAction, help="True means that it use the current screenshots to visualize actions")
+parser.add_argument('--screen', action=argparse.BooleanOptionalAction, help="True means that it uses the current screenshots to visualize actions")
 args = parser.parse_args()
 
 if not args.csvpath:

@@ -11,15 +11,13 @@ Supported Features:
 
 Known Issues:
 * On Ubuntu 20.04: 
-    1) Occasionally, the collector registers one extra scroll-down action than required, which does not accurately replicate the task.
+    1) Occasionally, the collector registers one extra scroll action than required, which does not accurately replicate the task.
     2) At replaying time, pushing buttons to write over "Show Applications" does not work. The written words are sent to terminal. 
 * On Windows 11:
     1) Scrolling isn't detected when using a touchpad; please use a mouse instead.
     2) The function (fn) key is not recognized, but detected.
     3) The alt_gr key can generate sequences of pairs (alt_gr + ctrl_l), leading to unnecessary storage of screenshots.
-* On both OS: 
-    1) Sometimes, in the process of minimizing a window, the size and location of the window are different w.r.t the original stored task. The replayer could fail in this case. 
-    2) It cannot replay combinations between ctrl and mouse actions. 
+* Sometimes, in the process of minimizing a window, the size and location of the window are different w.r.t the original stored task. The replayer could fail in this case. 
 
 ## Authors
 - [Erik Zamora](https://www.ezamorag.com)
