@@ -6,6 +6,7 @@ import re
 import keyboard as kb
 import pandas as pd
 import datetime
+from . import win11
 
 # Future work: 
 #   Include PC sound, microphone, webcam
@@ -28,7 +29,17 @@ class Collector:
         self.base_folder = base_folder
         self.scrolls = {-1: 'Scroll.down', 1:'Scroll.up'}
         self.sample_folder = self.create_incremented_folder(self.base_folder) + '/' 
-        
+
+        if keyboard.Key.__dict__['__module__'] == 'pynput.keyboard._win32':
+            self.mapping = win11.mapping
+            self.on_press = self.on_press_win11
+            self.on_release = self.on_release_win11
+            self.blockedkeys = [keyboard.Key.__dict__[kname] for kname in win11.blockedknames]
+            self.previouskey = 0
+        elif keyboard.Key.__dict__['__module__'] == 'pynput.keyboard._xorg':
+            self.on_press = self.on_press_ubuntu
+            self.on_release = self.on_release_ubuntu
+
     # Monitoring
     def start(self):
         print("Waiting for activation with ESC key ...")
@@ -47,7 +58,7 @@ class Collector:
         print("Monitoring was ended ...")
 
         data_df = pd.DataFrame(self.data, columns =['timestamp', 'img_path', 'px', 'py', 'event', 'trajectory'])
-        data_df.to_csv(self.sample_folder + f'raw_pcdata_{self.date}.csv')
+        data_df.to_csv(self.sample_folder + f'raw_pcdata_{self.date}.csv', index=False)
         self.movelistener.stop()
 
     # Mouse events
@@ -72,19 +83,40 @@ class Collector:
             print(dy, type(dy))
     
     # Keyboard events 
-    def on_press(self, key):
+    def on_press_ubuntu(self, key):
         if key != keyboard.Key.esc: 
             key = str(key).strip("'")
             px, py = self.mouse.position
             self.savedata(px, py, event=f'pressed {key}')
         else: 
             self.running = False
+
+    def on_press_win11(self, key):
+        if key != keyboard.Key.esc: 
+            if not ((key in self.blockedkeys) and (key == self.previouskey)):
+                key = self.mapping.get(str(key), key)
+                keystring = str(key).strip("'")
+                px, py = self.mouse.position
+                self.savedata(px, py, event=f'pressed {keystring}')
+        else: 
+            self.running = False
+        self.previouskey = key
             
-    def on_release(self, key):
+    def on_release_ubuntu(self, key):
         if key != keyboard.Key.esc: 
             key = str(key).strip("'")
             px, py = self.mouse.position
             self.savedata(px, py, event=f'released {key}')
+
+    def on_release_win11(self, key):
+        if key != keyboard.Key.esc: 
+            if key == self.previouskey:
+                self.previouskey = 0
+            key = self.mapping.get(str(key), key)
+            key = str(key).strip("'")
+            px, py = self.mouse.position
+            self.savedata(px, py, event=f'released {key}')
+
 
     def savedata(self, px, py, event, trajectory=[]):
         timestamp = time.perf_counter() - self.start_time

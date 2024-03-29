@@ -4,14 +4,18 @@ When you execute a task on your PC, it captures mouse and keyboard actions, incl
 Supported Features:
 * Capable of replaying double clicks and drag motions.
 * Designed to replay almost all keystrokes (please report any unsupported key).
-* Tested on Ubuntu 20.04.
+* Tested on Ubuntu 20.04 and Windows 11.
 * Supports all hotkeys and sequences of hotkeys (please report any unsupported hotkey).
 
 **Conditions for Optimal Performance**: The stored task must be replayed on the same computer, and the screen's initial state during replay should closely resemble the initially stored screen state.
 
 Known Issues:
-* Occasionally, the collector records one additional scroll-down action than necessary. This produces not replaying well the task. 
-* Sometimes, in the process of minimizing a window, the size and location of the window are different w.r.t the original stored task. The replayer could fail in this case. 
+* On Ubuntu 20.04: Occasionally, the collector registers one extra scroll-down action than required, which does not accurately replicate the task.
+* On Windows 11:
+    1) Scrolling isn't detected when using a touchpad; please use a mouse instead.
+    2) The function (fn) key is not recognized, but detected.
+    3) The alt_gr key can generate sequences of pairs (alt_gr + ctrl_l), leading to unnecessary storage of screenshots.
+* On both OS: Sometimes, in the process of minimizing a window, the size and location of the window are different w.r.t the original stored task. The replayer could fail in this case. 
 
 ## Authors
 - [Erik Zamora](https://www.ezamorag.com)

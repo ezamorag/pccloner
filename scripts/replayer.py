@@ -12,6 +12,6 @@ args = parser.parse_args()
 if not args.csvpath:
    print(glob('data/*/*.csv'))
 else: 
-   sample = pd.read_csv(args.csvpath, index_col=0)
+   sample = pd.read_csv(args.csvpath)
    task1 = Replayer(sample, data_dir='./')
    task1.execute(viz=args.viz, screen_flag=args.screen)
