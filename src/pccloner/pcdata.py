@@ -3,10 +3,9 @@ from pynput import keyboard, mouse
 import pyautogui
 import os
 import re
-import keyboard as kb
 import pandas as pd
 import datetime
-from . import win11
+from . import win11, ubuntu
 
 # Future work: 
 #   Include PC sound, microphone, webcam
@@ -37,13 +36,15 @@ class Collector:
             self.blockedkeys = [keyboard.Key.__dict__[kname] for kname in win11.blockedknames]
             self.previouskey = 0
         elif keyboard.Key.__dict__['__module__'] == 'pynput.keyboard._xorg':
+            self.mapping = ubuntu.mapping
             self.on_press = self.on_press_ubuntu
             self.on_release = self.on_release_ubuntu
 
     # Monitoring
     def start(self):
         print("Waiting for activation with ESC key ...")
-        kb.wait('esc')
+        with keyboard.Listener(on_press=self.wait_esc) as wait:
+            wait.join()
 
         print("Monitoring is working ...")
         self.movelistener.start()  
@@ -82,40 +83,45 @@ class Collector:
         except:
             print(dy, type(dy))
     
-    # Keyboard events 
+    #### Keyboard events 
+            
+    # Ubuntu
     def on_press_ubuntu(self, key):
         if key != keyboard.Key.esc: 
-            key = str(key).strip("'")
+            key = self.mapping.get(str(key), key)
+            keystring = str(key).strip("'") if str(key) != "'" else str(key)
             px, py = self.mouse.position
-            self.savedata(px, py, event=f'pressed {key}')
+            self.savedata(px, py, event=f'pressed {keystring}')
         else: 
             self.running = False
+            
+    def on_release_ubuntu(self, key):
+        if key != keyboard.Key.esc: 
+            key = self.mapping.get(str(key), key)
+            keystring = str(key).strip("'") if str(key) != "'" else str(key)
+            px, py = self.mouse.position
+            self.savedata(px, py, event=f'released {keystring}')
 
+    # Windows11
     def on_press_win11(self, key):
         if key != keyboard.Key.esc: 
             if not ((key in self.blockedkeys) and (key == self.previouskey)):
                 key = self.mapping.get(str(key), key)
-                keystring = str(key).strip("'")
+                keystring = str(key).strip("'") if str(key) != "'" else str(key)
                 px, py = self.mouse.position
                 self.savedata(px, py, event=f'pressed {keystring}')
         else: 
             self.running = False
         self.previouskey = key
-            
-    def on_release_ubuntu(self, key):
-        if key != keyboard.Key.esc: 
-            key = str(key).strip("'")
-            px, py = self.mouse.position
-            self.savedata(px, py, event=f'released {key}')
 
     def on_release_win11(self, key):
         if key != keyboard.Key.esc: 
             if key == self.previouskey:
                 self.previouskey = 0
             key = self.mapping.get(str(key), key)
-            key = str(key).strip("'")
+            keystring = str(key).strip("'") if str(key) != "'" else str(key)
             px, py = self.mouse.position
-            self.savedata(px, py, event=f'released {key}')
+            self.savedata(px, py, event=f'released {keystring}')
 
 
     def savedata(self, px, py, event, trajectory=[]):
@@ -125,6 +131,11 @@ class Collector:
         self.data.append((timestamp, img_path, px, py, event, trajectory))
         img.save(img_path)
         self.counter += 1
+
+    def wait_esc(self, key):
+        if key != keyboard.Key.esc: 
+            return True
+        return False
 
     # Initialize folder to save data
     def create_incremented_folder(self, path):

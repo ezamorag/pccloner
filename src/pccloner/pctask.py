@@ -98,20 +98,11 @@ class pcController():
                 'Scroll.up': lambda position, *args: self.scrollup(position),
             }
         self.none_mouse = lambda position, endposition: print("invalid mouse action")
-        self.umapping = {
-                '<269025048>': ['f4'], 
-                '<269025062>': ['f6'],  
-                '<65027>': ['alt_gr'], 
-                '<65056>': ['shift_r', 'tab'], # The special case complicates the code !!
-                "['´']": [],   # tilde
-                "['¨']": [],   # tilde con shift_r
-                '"\'"': ["'"],   
-            }
 
     def run(self, action, position, endposition, delay): 
         # Hotkeys
         if '+' in action: 
-            hotkeys = [self.classify_keystroke(hotkey)[0] for hotkey in action.split('+')] # The special case of '<65056>' is ignored
+            hotkeys = [self.classify_keystroke(hotkey)[0] for hotkey in action.split('+')] 
             for key in hotkeys:
                 self.keyboard.press(key)
             for key in hotkeys[::-1]:
@@ -124,11 +115,8 @@ class pcController():
             keys = self.classify_keystroke(action)
             if len(keys) == 1:  
                 self.push(keys[0])
-            elif len(keys) == 2:
-                with self.keyboard.pressed(keys[0]):
-                    self.push(keys[1])
             else:
-                print('This keystroke was not execute', action)
+                print('This keystroke was not execute ->', action)
         time.sleep(delay)
 
     def classify_keystroke(self, action):
@@ -143,19 +131,9 @@ class pcController():
                 keys.append(Key.__dict__[keyname])
             else:
                 print("invalid key action", action)  
-        # Unknown keys 
-        elif action in self.umapping.keys():      
-            key_sequence = self.umapping[action]
-            if len(key_sequence) == 1: 
-                if key_sequence[0] == "'":  
-                    keys.append("'")
-                else: 
-                    keys.append(Key.__dict__[key_sequence[0]])
-            elif len(key_sequence) == 2: 
-                keys.append(Key.__dict__[key_sequence[0]])
-                keys.append(Key.__dict__[key_sequence[1]])   
+        # Unknown keys   
         else:
-            print(f'The action {action} is not a key, not a mouse, not a char')
+            print(f'The action {action} is unknown key')
         return keys 
 
     def push(self, button):
