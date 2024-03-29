@@ -39,7 +39,7 @@ from pccloner.pcdata import Collector
 
 if __name__ == '__main__':
     pc = Collector()
-    pc.start()
+    data_df = pc.start()
 ```
 2. Run the previous script ```python collector.py```
 3. Press the ESC key to start recording. And don't forget to press again the ESC key to terminate the recording. This code will create a folder called "data" where it will save all the data related to your task.
