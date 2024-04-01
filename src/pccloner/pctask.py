@@ -103,42 +103,34 @@ class pcController():
         actions = event.split('+')
         # Press
         for action in actions:
-            if self.is_mouse(action): 
+            if 'Button.' in action or "Scroll." in action: 
                 self.mouse_mapping.get(action, self.none_mouse)(position, endposition)
             else: 
-                key = self.classify_keystroke(action)[0]
+                key = self.classify_keystroke(action)
                 self.keyboard.press(key)
         # Release
         for action in actions[::-1]:
-            if self.is_mouse(action): 
+            if 'Button.' in action or "Scroll." in action: 
                 pass
             else:
-                key = self.classify_keystroke(action)[0]
+                key = self.classify_keystroke(action)
                 self.keyboard.release(key)
         time.sleep(delay)
-    
-    def is_mouse(self, action):
-        if 'Button.' in action or "Scroll." in action:
-            return True
-        else: 
-            return False
 
     def classify_keystroke(self, action):
-        keys = []
-        # Writing a char
-        if len(action) == 1:
-            keys.append(action)
-        # Known Keys
+        if len(action) == 1:   # Char
+            key = action
         elif "Key." in action:
             keyname = action.replace('Key.','')
             if keyname in Key.__dict__.keys():    
-                keys.append(Key.__dict__[keyname])
+                key = Key.__dict__[keyname]
             else:
-                print("invalid key action", action)  
-        # Unknown keys   
+                print("This Key is not in the dictionary of pynput", action) 
+                key = None   
         else:
-            print(f'The action {action} is unknown key')
-        return keys 
+            print(f'The action {action} is unknown')
+            key = None 
+        return key
 
     def clickleft(self, position):
         self.mouse.position = position
