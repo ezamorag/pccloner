@@ -3,6 +3,8 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from pathlib import Path
 import pyautogui
+pyautogui.MINIMUM_DURATION = 0.01
+pyautogui.FAILSAFE = False
 from pynput import keyboard
 
 # No double clicks (SOLVED)
@@ -31,7 +33,7 @@ class Replayer():
         self.processing = Preprocessing(length_th = 5, minpixels_th = 1, dt_th = 0.22, maxpixels_th = 0)
         self.pccontroller = pcController()
        
-    def execute(self, viz, screen_flag):
+    def execute(self, viz, screen_flag, mousemoves_flag = False):
         self.running = True
         exitlistener = keyboard.Listener(on_press=self.on_press)
         self.actions = self.processing.run(self.sample)
@@ -42,11 +44,16 @@ class Replayer():
                 break
             if viz == True: 
                 self.viz_actions(index, action, screen_flag)
+            if mousemoves_flag == True:
+                trajectory = action['trajectory']
+            else:
+                trajectory = []
             self.pccontroller.run(event = action['event'], 
                                   position = (action['px'], action['py']), 
                                   endposition = (action['drag2px'], action['drag2py']), 
                                   #endposition = action['trajectory'], 
-                                  delay = action['delay']) 
+                                  delay = action['delay'],
+                                  trajectory = trajectory) 
         exitlistener.stop()
         pyautogui.alert('The execution has been terminated.')
 
@@ -99,7 +106,10 @@ class pcController():
             }
         self.none_mouse = lambda position, endposition: print("invalid mouse action")
 
-    def run(self, event, position, endposition, delay): 
+    def run(self, event, position, endposition, delay, trajectory): 
+        if event != 'Button.left.drag' and trajectory != []:
+            self.move_over_trajectory(position, trajectory)
+
         actions = event.split('+')
         # Press
         for action in actions:
@@ -131,6 +141,11 @@ class pcController():
             print(f'The action {action} is unknown')
             key = None 
         return key
+    
+    def move_over_trajectory(self, position, trajectory, steps = 4):
+        self.mouse.position = position
+        for _, x, y in trajectory[::steps]: 
+            pyautogui.moveTo(x,y)
 
     def clickleft(self, position):
         self.mouse.position = position

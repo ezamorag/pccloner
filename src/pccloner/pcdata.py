@@ -66,22 +66,17 @@ class Collector:
 
     # Mouse events
     def on_move(self, x, y):
-        if self.movesflag == True:
-            self.moves.append((time.perf_counter() - self.start_time, x, y)) 
-        else:
-            self.moves=[]
+        self.moves.append((time.perf_counter() - self.start_time, x, y)) 
 
     def on_click(self, px, py, button, pressed):
         if pressed:
-            self.movesflag = True
-            self.savedata(px, py, event=f'pressed {button}')
+            self.savedata(px, py, event=f'pressed {button}', trajectory=self.moves)
         else:
-            self.movesflag = False
             self.savedata(px, py, event=f'released {button}', trajectory=self.moves)
 
     def on_scroll(self, px, py, dx, dy):
         try:
-            self.savedata(px, py, event=self.scrolls[dy])
+            self.savedata(px, py, event=self.scrolls[dy], trajectory=self.moves)
         except:
             print(dy, type(dy))
     
@@ -93,7 +88,7 @@ class Collector:
             key = self.mapping.get(str(key), key)
             keystring = str(key).strip("'") if str(key) != "'" else str(key)
             px, py = self.mouse.position
-            self.savedata(px, py, event=f'pressed {keystring}')
+            self.savedata(px, py, event=f'pressed {keystring}', trajectory=self.moves)
         else: 
             self.running = False
             
@@ -102,7 +97,7 @@ class Collector:
             key = self.mapping.get(str(key), key)
             keystring = str(key).strip("'") if str(key) != "'" else str(key)
             px, py = self.mouse.position
-            self.savedata(px, py, event=f'released {keystring}')
+            self.savedata(px, py, event=f'released {keystring}', trajectory=self.moves)
 
     # Windows11
     def on_press_win11(self, key):
@@ -111,7 +106,7 @@ class Collector:
                 key = self.mapping.get(str(key), key)
                 keystring = str(key).strip("'") if str(key) != "'" else str(key)
                 px, py = self.mouse.position
-                self.savedata(px, py, event=f'pressed {keystring}')
+                self.savedata(px, py, event=f'pressed {keystring}', trajectory=self.moves)
         else: 
             self.running = False
         self.previouskey = key
@@ -123,7 +118,7 @@ class Collector:
             key = self.mapping.get(str(key), key)
             keystring = str(key).strip("'") if str(key) != "'" else str(key)
             px, py = self.mouse.position
-            self.savedata(px, py, event=f'released {keystring}')
+            self.savedata(px, py, event=f'released {keystring}', trajectory=self.moves)
 
 
     def savedata(self, px, py, event, trajectory=[]):
@@ -133,6 +128,7 @@ class Collector:
         self.data.append((timestamp, img_path, px, py, event, trajectory))
         img.save(img_path)
         self.counter += 1
+        self.moves = []
 
     def wait_esc(self, key):
         if key != keyboard.Key.esc: 
