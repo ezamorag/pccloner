@@ -6,6 +6,8 @@ import re
 import pandas as pd
 import datetime
 from . import win11, ubuntu
+import platform
+import shutil
 
 # Future work: 
 #   Include PC sound, microphone, webcam
@@ -59,8 +61,20 @@ class Collector:
         print("Monitoring was ended ...")
 
         data_df = pd.DataFrame(self.data, columns =['timestamp', 'img_path', 'px', 'py', 'event', 'trajectory'])
-        data_df.to_csv(self.sample_folder + f'raw_pcdata_{self.date}.csv', index=False)
+        data_df.to_csv(self.sample_folder + f'raw_pcdata.csv', index=False)
         self.movelistener.stop()
+
+        # Metadata
+        metadatafile = open(self.sample_folder + 'metadata.txt', 'w')
+        metadata = ['platform version: ' + platform.version() + '\n', 
+                    'date: ' + self.date + '\n',
+                    ] 
+        metadatafile.writelines(metadata)
+        metadatafile.close()
+
+        # Zipping data
+        shutil.make_archive(self.base_folder + self.sample_folder.split('/')[1], 'zip', self.sample_folder)
+        print('Compressing data into a zip file ... it can take some time')
 
         return data_df
 
