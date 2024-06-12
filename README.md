@@ -13,7 +13,8 @@ Supported Features:
 Known Issues:
 * On Ubuntu 20.04: 
     1) Occasionally, the collector registers one extra scroll action than required, which does not accurately replicate the task.
-    2) At replaying time, pushing buttons to write over "Show Applications" does not work. The written words are sent to terminal. 
+    2) At replaying time, pushing buttons to write over "Show Applications" does not work. The written words are sent to terminal.
+    3) If you use a hidden bar of tasks, then the replayer cannot activate it even fi this action was recorded.  
 * On Windows 11:
     1) Scrolling isn't detected when using a touchpad; please use a mouse instead.
     2) The function (fn) key is not recognized, but detected.
