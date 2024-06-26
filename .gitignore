@@ -6,3 +6,5 @@ viz/
 src/pccloner.egg-info/
 archive/
 testing_data/
+scripts/build/
+pccloner0016_win.spec
