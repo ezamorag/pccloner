@@ -7,4 +7,5 @@ src/pccloner.egg-info/
 archive/
 testing_data/
 scripts/build/
+scripts/__pycache__/
 pccloner0016_win.spec
