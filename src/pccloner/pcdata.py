@@ -30,6 +30,8 @@ class Collector:
         self.base_folder = base_folder
         self.scrolls = {-1: 'Scroll.down', 1:'Scroll.up'}
         self.sample_folder = self.create_incremented_folder(self.base_folder) + '/' 
+        initial_df = pd.DataFrame({}, columns =['timestamp', 'img_path', 'px', 'py', 'event', 'trajectory']) 
+        initial_df.to_csv(self.sample_folder + 'rawpcdata_temp.csv', index=False)
 
         if keyboard.Key.__dict__['__module__'] == 'pynput.keyboard._win32':
             self.mapping = win11.mapping
@@ -49,8 +51,9 @@ class Collector:
             wait.join()
 
         print("Monitoring is working ...")
+        self.savemetada()
         self.movelistener.start()  
-        self.date = str(datetime.datetime.now()).split('.')[0].replace(':','-').replace(' ','_')
+
         self.running = True
         self.start_time = time.perf_counter()
         self.lastscreen = (time.perf_counter() - self.start_time, pyautogui.screenshot())
@@ -59,18 +62,10 @@ class Collector:
             while self.running:
                 self.lastscreen = (time.perf_counter() - self.start_time, pyautogui.screenshot())
         print("Monitoring was ended ...")
-
-        data_df = pd.DataFrame(self.data, columns =['timestamp', 'img_path', 'px', 'py', 'event', 'trajectory'])
-        data_df.to_csv(self.sample_folder + f'raw_pcdata.csv', index=False)
         self.movelistener.stop()
-
-        # Metadata
-        metadatafile = open(self.sample_folder + 'metadata.txt', 'w')
-        metadata = ['platform version: ' + platform.version() + '\n', 
-                    'date: ' + self.date + '\n',
-                    ] 
-        metadatafile.writelines(metadata)
-        metadatafile.close()
+        # Saving data at the end
+        data_df = pd.DataFrame(self.data, columns =['timestamp', 'img_path', 'px', 'py', 'event', 'trajectory'])
+        data_df.to_csv(self.sample_folder + 'raw_pcdata.csv', index=False)
 
         # Zipping data
         shutil.make_archive(self.base_folder + self.sample_folder.split('/')[1], 'zip', self.sample_folder)
@@ -141,6 +136,9 @@ class Collector:
         img_path = self.sample_folder + 'screen{:010}_{}.jpg'.format(self.counter, t)
         self.data.append((timestamp, img_path, px, py, event, trajectory))
         img.save(img_path)
+        temp_row = pd.DataFrame([self.data[-1]]) 
+        with open(self.sample_folder + 'rawpcdata_temp.csv', 'a') as f:
+            temp_row.to_csv(f, index=False, header=False)
         self.counter += 1
         self.moves = []
 
@@ -165,5 +163,14 @@ class Collector:
         new_folder_path = os.path.join(path, new_folder_name)
         os.makedirs(new_folder_path)
         return new_folder_path
+    
+    def savemetada(self):
+        date = str(datetime.datetime.now()).split('.')[0].replace(':','-').replace(' ','_')
+        metadatafile = open(self.sample_folder + 'metadata.txt', 'w')
+        metadata = ['platform version: ' + platform.version() + '\n', 
+                    'date: ' + date + '\n',
+                    ] 
+        metadatafile.writelines(metadata)
+        metadatafile.close()
 
     
