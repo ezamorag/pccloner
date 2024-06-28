@@ -138,7 +138,7 @@ class Collector:
         img.save(img_path)
         temp_row = pd.DataFrame([self.data[-1]]) 
         with open(self.sample_folder + 'rawpcdata_temp.csv', 'a') as f:
-            temp_row.to_csv(f, index=False, header=False)
+            temp_row.to_csv(f, index=False, header=False, lineterminator='\n')
         self.counter += 1
         self.moves = []
 
