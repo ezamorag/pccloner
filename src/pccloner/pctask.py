@@ -209,7 +209,7 @@ class Preprocessing():
         self.maxpixels_th = maxpixels_th
 
     def run(self, sample): 
-        s1 = sample.copy()                                                             
+        s1 = sample.copy()                                                          # The order of following processing is important
         s1['trajectory'] = s1['trajectory'].map(lambda x: self.string2list(x))      # Convert a list represented as a string into a actual list
         s1 = self.replace_drags(s1)                                                 # Detect drag events
         s1 = self.replace_doubleclicks(s1)                                          # Detect doubleclicks
@@ -264,13 +264,14 @@ class Preprocessing():
         return groups
     
     def find_hotkeys(self, sample):
+        """ Look for candidates of hotkeys based on pressed events """
         ixs_pressed = sample.index[sample['event'].map(lambda x: 'pressed' in x)].tolist()
         hotkeys_indexes = []
-        while len(ixs_pressed) >= 2:  # To not include the end Key.esc
+        while len(ixs_pressed) >= 2:  # There must be at least 2 pressed events 
             ix = ixs_pressed[0]
             released1 = sample['event'][ix].replace('pressed', 'released')
             ixN = sample.loc[ix:].index[sample.loc[ix:,'event'] == released1][0]
-            if ixN - ix >= 3:  # 3 para evitar que al escribir aparezcan hotkeys. Cuidado!! es una condicion debil
+            if ixN - ix >= 2 and not self.are_all_single_chars(ix, ixN, sample) and not self.are_all_thesamekey(ix, ixN, sample):  
                 hotkeys_indexes.append((ix, ixN))
             for i in range(ix,ixN):
                 try: 
@@ -278,6 +279,26 @@ class Preprocessing():
                 except:
                     pass
         return hotkeys_indexes
+    
+    def are_all_single_chars(self, ix, ixN, sample):
+        """ Check if all pressed keys are characters """
+        # Hotkeys must have at least a non-character key
+        events = sample['event'][ix:ixN][sample['event'][ix:ixN].map(lambda x: 'pressed' in x)].tolist()
+        conds = [len(e.replace('pressed ','')) == 1 for e in events]
+        flag = conds[0]
+        for c in conds[1:]:
+            flag *= c
+        return flag
+    
+    def are_all_thesamekey(self, ix, ixN, sample):
+        """ Check if all pressed keys are the same key """
+        # In this case, it is not hotkey, but a key continuously pressed
+        events = sample['event'][ix:ixN][sample['event'][ix:ixN].map(lambda x: 'pressed' in x)].tolist()
+        conds = [events[0] == e for e in events]
+        flag = conds[0]
+        for c in conds[1:]:
+            flag *= c
+        return flag
 
     def string2list(self, string): 
         """ Convert the trajectory string into an actual python list"""
