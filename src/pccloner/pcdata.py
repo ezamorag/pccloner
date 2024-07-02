@@ -19,7 +19,8 @@ import shutil
 #   Make easy installation for windows users using pip install 
 
 class Collector:
-    def __init__(self, base_folder='data/'):
+    def __init__(self, base_folder='data/', print_events = False):
+        self.print_events = print_events
         self.mouse = mouse.Controller()
         self.counter = 0
         self.lastscreen = None
@@ -139,6 +140,8 @@ class Collector:
         temp_row = pd.DataFrame([self.data[-1]]) 
         with open(self.sample_folder + 'rawpcdata_temp.csv', 'a') as f:
             temp_row.to_csv(f, index=False, header=False, lineterminator='\n')
+        if self.print_events:
+            print(timestamp, event)
         self.counter += 1
         self.moves = []
 
