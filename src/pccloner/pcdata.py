@@ -29,7 +29,8 @@ class Collector:
         self.movelistener = mouse.Listener(on_move=self.on_move)
         self.movesflag = False
         self.base_folder = base_folder
-        self.scrolls = {-1: 'Scroll.down', 1:'Scroll.up'}
+        self.vscrolls = {-1: 'Scroll.down', 1:'Scroll.up'}
+        self.hscrolls = {-1: 'Scroll.left', 1:'Scroll.right'}
         self.sample_folder = self.create_incremented_folder(self.base_folder) + '/' 
         initial_df = pd.DataFrame({}, columns =['timestamp', 'img_path', 'px', 'py', 'event', 'trajectory']) 
         initial_df.to_csv(self.sample_folder + 'rawpcdata_temp.csv', index=False)
@@ -86,9 +87,15 @@ class Collector:
 
     def on_scroll(self, px, py, dx, dy):
         try:
-            self.savedata(px, py, event=self.scrolls[dy], trajectory=self.moves)
+            self.savedata(px, py, event=self.vscrolls[dy], trajectory=self.moves)
         except:
-            print(dy, type(dy))
+            print(f'Invalid value for vertical scroll = {dy}, data type = {type(dy)}')
+
+        #try:
+        #    self.savedata(px, py, event=self.hscrolls[dx], trajectory=self.moves)
+        #except:
+        #    print(f'Invalid value for horizontal scroll = {dx}, data type = {type(dx)}')
+        
     
     #### Keyboard events 
             

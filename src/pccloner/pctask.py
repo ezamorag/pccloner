@@ -213,6 +213,9 @@ class Preprocessing():
         s1['trajectory'] = s1['trajectory'].map(lambda x: self.string2list(x))      # Convert a list represented as a string into a actual list
         s1 = self.replace_drags(s1)                                                 # Detect drag events
         s1 = self.replace_doubleclicks(s1)                                          # Detect doubleclicks
+        s1 = self.converts_shifted_events(s1)                                       # Convert shifted events which are different, but equivalent. 
+        #s1.to_csv('shifted.csv')
+        #check(s1)
         s1 = self.replace_hotkeys(s1)                                               # Detect hotkeys and combinations
         s1 = s1[s1['event'].map(lambda x: ('pressed' in x) or ('Scroll.' in x))].copy()   # Select pressed and scroll events
         s1['event'] = s1['event'].map(lambda x: x.replace('pressed ',''))                 # Remove pressed string
@@ -222,6 +225,42 @@ class Preprocessing():
         actions = s1.reset_index(drop=True)                                     # Reset dataframe index
         return actions
     
+    def converts_shifted_events(self, sample):
+        """ Search for pressed and released events that are the same symbol because of shift key """
+        # Find all Key.shift events -> Which key.shift event do have releases after it? -> 
+        # -> Yes, does this release have a corresponding press event before shift? -> Yes, change the release event. 
+        delta = 2  # 1 or 2, the other values have not been proven
+        no_shifted = "|1234567890'¿qwertyuiop´+asdfghjklñ{}<zxcvbnm,.-"
+        shifted =    '°!"#$%&/()=?¡QWERTYUIOP¨*ASDFGHJKLÑ[]>ZXCVBNM;:_'
+        # Assuming this conversion is valid for all keyboards 
+        def converts(c):
+            co = None
+            if c in no_shifted:
+                co = shifted[no_shifted.index(c)]
+            elif c in shifted:
+                co = no_shifted[shifted.index(c)]
+            else:
+                print('This character was not found in shifted strings: {c}')
+            return co
+        
+        samplecopy = sample.copy()
+        samplecopy = samplecopy.reset_index(drop=True)
+        ixs_shift = samplecopy.index[samplecopy['event'].map(lambda x: 'Key.shift_r' in x or 'Key.shift' in x or 'Key.shift_l' in x)].tolist()
+        while len(ixs_shift) > 0:  # There must be at least 2 pressed events 
+            ix = ixs_shift.pop(0)
+            ix_releases = samplecopy.loc[ix+1:ix+1+delta].index[samplecopy.loc[ix+1:ix+1+delta,'event'].map(lambda x: 'released' in x)].tolist()
+            for ixR in ix_releases:
+                noshifted_key = samplecopy['event'][ixR].replace('released ', '')
+                if len(noshifted_key) == 1: # This release event must be a single character
+                    shifted_key = converts(noshifted_key)
+                    possible_keys = samplecopy.loc[ix-delta:ix].index[samplecopy.loc[ix-delta:ix,'event'] == 'pressed ' + shifted_key].tolist()
+                    r1 = samplecopy['event'][ix-delta].replace('pressed', 'released')
+                    if len(possible_keys) > 0 and (samplecopy['event'][ix-delta+1] != r1): 
+                        print(f'Correction for the shift event at {ixR}. ', samplecopy.loc[ixR,'event'], ' --> ' 'released ' + shifted_key)
+                        samplecopy.loc[ixR,'event'] = 'released ' + shifted_key
+                        
+        return samplecopy 
+       
     def replace_hotkeys(self, sample):
         """ Replace rows in the sample by hotkey events """
         # The key insight: consecutive pressed events form a hotkey. 
@@ -282,9 +321,10 @@ class Preprocessing():
     
     def are_all_single_chars(self, ix, ixN, sample):
         """ Check if all pressed keys are characters """
-        # Hotkeys must have at least a non-character key
+        # Hotkeys must have at least a non-character key and not Key.space
         events = sample['event'][ix:ixN][sample['event'][ix:ixN].map(lambda x: 'pressed' in x)].tolist()
-        conds = [len(e.replace('pressed ','')) == 1 for e in events]
+        #conds = [len(e.replace('pressed ','')) == 1 for e in events]
+        conds = [(len(e.replace('pressed ','')) == 1) or (e.replace('pressed ','') == 'Key.space') for e in events]
         flag = conds[0]
         for c in conds[1:]:
             flag *= c
