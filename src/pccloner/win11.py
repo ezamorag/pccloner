@@ -1,6 +1,24 @@
 mapping = {
+'Button.x1': 'Button.button8',  # Backwards
+'Button.x2': 'Button.button9',  # Forwards
 "['´']": "´", # "['´']": '´',  # tilde   
 "['¨']": "¨", # "['¨']": '¨',  # tilde con shift_r
+
+# Calculator in keyboard (without num_lock)
+'<96>': '0',
+'<97>': '1',
+'<98>': '2',
+'<99>': '3',
+'<100>': '4',
+'<101>': '5',
+'<102>': '6',
+'<103>': '7',
+'<104>': '8',
+'<105>': '9',
+'<110>': '.',
+
+# Without num_lock
+#'<12>': Nothing happens, press 5 in calculator keyboard. 
 
 # with altgr
 '<49>': '1',
@@ -47,8 +65,8 @@ mapping = {
 '<77>': 'm',
 '<188>': ',',
 '<190>': '.',
-'<189>': '-',
-#'<225>': 'Key.fn',
+'<189>': '- 189',
+'<225>': 'Key.fn',
 '<226>': '<',
 
 # with ctrl
@@ -85,7 +103,7 @@ mapping = {
 "'\\x02'": 'b',
 "'\\x0e'": 'n',
 "'\\r'": 'm',
-"'\\x1f'": '-',
+"'\\x1f'": '- x1f',
 
 "'\\x1c'": '<',
 
@@ -94,3 +112,51 @@ mapping = {
 blockedknames = ['ctrl', 'ctrl_l', 'ctrl_r', 
                  'alt', 'alt_l', 'alt_r', 'alt_gr',
                  'shift', 'shift_r', 'shift_l']
+
+
+import ctypes
+
+class LockStates: 
+    def __init__(self): 
+        self.VK_CAPITAL = 0x14  # Change to Caps Lock key code
+        self.VK_NUMLOCK = 0x90
+        self.VK_SCROLL = 0x91
+        self.user32 = ctypes.WinDLL('user32', use_last_error=True)
+
+    def reset_all(self):
+        # Get the current Caps Lock state
+        is_caps_lock_on = self.get_capslock_state(self.VK_CAPITAL)
+        if is_caps_lock_on:
+            print('The caps_lock was on, we turn it off for you')
+            self.toggle_capslock(self.VK_CAPITAL)
+
+        is_numlock_on = self.get_numlock_state(self.VK_NUMLOCK)
+        if is_numlock_on:
+            print('The num_lock was on, we turn it off for you')
+            self.toggle_numlock(self.VK_NUMLOCK)
+
+        is_scroll_lock_on = self.get_scrlock_state(self.VK_SCROLL)
+        if is_scroll_lock_on:
+            print('The scroll_lock was on, we turn it off for you')
+            self.toggle_scrlock(self.VK_SCROLL)
+
+    def get_capslock_state(self, vk):
+        return bool(self.user32.GetKeyState(vk) & 0x0001)
+
+    def toggle_capslock(self, vk):
+        self.user32.keybd_event(vk, 0x45, 0, 0)  # Key down
+        self.user32.keybd_event(vk, 0x45, 0x0002, 0)  # Key up
+
+    def get_numlock_state(self, vk):
+        return bool(self.user32.GetKeyState(vk) & 0x0001)
+
+    def toggle_numlock(self, vk):
+        self.user32.keybd_event(vk, 0x45, 0, 0)  # Key down
+        self.user32.keybd_event(vk, 0x45, 0x0002, 0)  # Key up
+
+    def get_scrlock_state(self, vk):
+        return bool(self.user32.GetKeyState(vk) & 0x0001)
+
+    def toggle_scrlock(self, vk):
+        self.user32.keybd_event(vk, 0x45, 0, 0)  # Key down
+        self.user32.keybd_event(vk, 0x45, 0x0002, 0)  # Key up

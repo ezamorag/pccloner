@@ -1,7 +1,7 @@
 from pccloner.pcdata import Collector
-from glob import glob 
 from pccloner.pctask import Replayer
 import pandas as pd
+from glob import glob 
 
 if __name__ == '__main__':
     pc = Collector(print_events=True)

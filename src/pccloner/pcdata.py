@@ -1,7 +1,6 @@
-import time
+import time, os, math
 from pynput import keyboard, mouse
 import pyautogui
-import os
 import re
 import pandas as pd
 import datetime
@@ -41,10 +40,15 @@ class Collector:
             self.on_release = self.on_release_win11
             self.blockedkeys = [keyboard.Key.__dict__[kname] for kname in win11.blockedknames]
             self.previouskey = 0
+            locks = win11.LockStates()
+            locks.reset_all()
         elif keyboard.Key.__dict__['__module__'] == 'pynput.keyboard._xorg':
             self.mapping = ubuntu.mapping
             self.on_press = self.on_press_ubuntu
             self.on_release = self.on_release_ubuntu
+            while ubuntu.check_locks(): # Stop execution until caps and num locks are off
+                time.sleep(2)
+                os.system('clear')
 
     # Monitoring
     def start(self):
@@ -86,16 +90,14 @@ class Collector:
             self.savedata(px, py, event=f'released {button}', trajectory=self.moves)
 
     def on_scroll(self, px, py, dx, dy):
-        try:
-            self.savedata(px, py, event=self.vscrolls[dy], trajectory=self.moves)
-        except:
-            print(f'Invalid value for vertical scroll = {dy}, data type = {type(dy)}')
-
-        #try:
-        #    self.savedata(px, py, event=self.hscrolls[dx], trajectory=self.moves)
-        #except:
-        #    print(f'Invalid value for horizontal scroll = {dx}, data type = {type(dx)}')
-        
+        if dy != 0:
+            self.savedata(px, py, 
+                        event=self.vscrolls[math.copysign(1,dy)] + '_' + str(abs(dy)), 
+                        trajectory=self.moves)
+        if dx != 0:
+            self.savedata(px, py, 
+                        event=self.hscrolls[math.copysign(1,dx)] + '_' + str(abs(dx)), 
+                        trajectory=self.moves)
     
     #### Keyboard events 
             
@@ -177,8 +179,13 @@ class Collector:
     def savemetada(self):
         date = str(datetime.datetime.now()).split('.')[0].replace(':','-').replace(' ','_')
         metadatafile = open(self.sample_folder + 'metadata.txt', 'w')
-        metadata = ['platform version: ' + platform.version() + '\n', 
-                    'date: ' + date + '\n',
+        metadata = ['date: ' + date + '\n',
+                    'node name: ' + platform.node() + '\n', 
+                    'os: ' + platform.system() + '\n', 
+                    'version: ' + platform.version() + '\n', 
+                    'release: ' + platform.release() + '\n', 
+                    'platform: ' + platform.platform() + '\n', 
+                    'processor: ' + platform.processor() + '\n', 
                     ] 
         metadatafile.writelines(metadata)
         metadatafile.close()

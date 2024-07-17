@@ -97,12 +97,18 @@ class pcController():
         self.keyboard = kController()
         self.mouse_mapping = {
                 'Button.left': lambda position, *args: self.clickleft(position),
+                'Button.right': lambda position, *args: self.clickright(position),
+                'Button.middle': lambda position, *args: self.clickmiddle(position),
+                'Button.button8': lambda position, *args: self.backwards(position),
+                'Button.button9': lambda position, *args: self.forwards(position),
+                
                 'Button.left.double': lambda position, *args: self.doubleclickleft(position),
                 'Button.left.drag': lambda position, endposition: self.pyautogui_leftdrag(position, endposition), 
                 #'Button.left.drag': lambda position, trajectory: self.leftdrag_following(position, trajectory),  
-                'Button.right': lambda position, *args: self.clickright(position),
                 'Scroll.down': lambda position, *args: self.scrolldown(position),
                 'Scroll.up': lambda position, *args: self.scrollup(position),
+                'Scroll.left': lambda position, *args: self.scrollleft(position),
+                'Scroll.right': lambda position, *args: self.scrollright(position),
             }
         self.none_mouse = lambda position, endposition: print("invalid mouse action")
 
@@ -151,6 +157,22 @@ class pcController():
         self.mouse.position = position
         self.mouse.click(Button.left, 1)
 
+    def clickright(self, position):
+        self.mouse.position = position
+        self.mouse.click(Button.right, 1)
+
+    def clickmiddle(self, position):
+        self.mouse.position = position
+        self.mouse.click(Button.middle, 1)
+
+    def backwards(self, position):
+        self.mouse.position = position
+        self.mouse.click(Button.button8, 1)
+    
+    def forwards(self, position):
+        self.mouse.position = position
+        self.mouse.click(Button.button9, 1)
+
     def doubleclickleft(self, position):
         self.mouse.position = position
         pyautogui.click(button='left', clicks=2, interval=0.25)
@@ -183,10 +205,6 @@ class pcController():
             t0 = t
         self.mouse.release(Button.left)
 
-    def clickright(self, position):
-        self.mouse.position = position
-        self.mouse.click(Button.right, 1)
-
     def scrollup(self, position):
         self.mouse.position = position
         self.mouse.scroll(0, 1)
@@ -194,6 +212,14 @@ class pcController():
     def scrolldown(self, position):
         self.mouse.position = position
         self.mouse.scroll(0, -1)
+
+    def scrollright(self, position):
+        self.mouse.position = position
+        self.mouse.scroll(1, 0)
+
+    def scrollleft(self, position):
+        self.mouse.position = position
+        self.mouse.scroll(-1, 0)
 
 # A simpler approach would be not to do this preprocessing and do replay including releases
 # Avoiding hoykey, double clicks and drags detections 
