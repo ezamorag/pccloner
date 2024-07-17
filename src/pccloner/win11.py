@@ -65,7 +65,7 @@ mapping = {
 '<77>': 'm',
 '<188>': ',',
 '<190>': '.',
-'<189>': '- 189',
+'<189>': '-',
 '<225>': 'Key.fn',
 '<226>': '<',
 
@@ -103,7 +103,7 @@ mapping = {
 "'\\x02'": 'b',
 "'\\x0e'": 'n',
 "'\\r'": 'm',
-"'\\x1f'": '- x1f',
+"'\\x1f'": '-',
 
 "'\\x1c'": '<',
 
@@ -160,3 +160,14 @@ class LockStates:
     def toggle_scrlock(self, vk):
         self.user32.keybd_event(vk, 0x45, 0, 0)  # Key down
         self.user32.keybd_event(vk, 0x45, 0x0002, 0)  # Key up
+
+
+import locale
+
+def get_keyboard_language():
+    user32 = ctypes.WinDLL('user32', use_last_error=True)
+    klid = user32.GetKeyboardLayout(0)
+    lang_id = klid & 0xFFFF
+    language_code = locale.windows_locale[lang_id]
+    return language_code
+

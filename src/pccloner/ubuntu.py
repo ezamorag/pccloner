@@ -36,3 +36,10 @@ def check_locks():
             stop = True
     return stop
 
+def get_keyboard_language():
+    result = subprocess.run(['setxkbmap', '-query'], stdout=subprocess.PIPE)
+    output = result.stdout.decode()
+    for line in output.split('\n'):
+        if 'layout:' in line:
+            return line.split(':')[1].strip()
+    return None

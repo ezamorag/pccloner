@@ -1,4 +1,4 @@
-import time, os, math
+import time, os, math, locale, subprocess, json
 from pynput import keyboard, mouse
 import pyautogui
 import re
@@ -90,14 +90,18 @@ class Collector:
             self.savedata(px, py, event=f'released {button}', trajectory=self.moves)
 
     def on_scroll(self, px, py, dx, dy):
-        if dy != 0:
-            self.savedata(px, py, 
-                        event=self.vscrolls[math.copysign(1,dy)] + '_' + str(abs(dy)), 
-                        trajectory=self.moves)
-        if dx != 0:
-            self.savedata(px, py, 
-                        event=self.hscrolls[math.copysign(1,dx)] + '_' + str(abs(dx)), 
-                        trajectory=self.moves)
+        if dx == 0 and dy == 0:
+            print('Something weird happens both dx and dy are zero')
+        else: 
+            if dy != 0:
+                self.savedata(px, py, 
+                            event=self.vscrolls[math.copysign(1,dy)] + '_' + str(abs(dy)), 
+                            trajectory=self.moves)
+            if dx != 0:
+                self.savedata(px, py, 
+                            event=self.hscrolls[math.copysign(1,dx)] + '_' + str(abs(dx)), 
+                            trajectory=self.moves)
+
     
     #### Keyboard events 
             
@@ -179,15 +183,55 @@ class Collector:
     def savemetada(self):
         date = str(datetime.datetime.now()).split('.')[0].replace(':','-').replace(' ','_')
         metadatafile = open(self.sample_folder + 'metadata.txt', 'w')
+        os_language_encoding = locale.getlocale()
+        ip_info = self.get_ip_info()
+        if keyboard.Key.__dict__['__module__'] == 'pynput.keyboard._win32':
+            keyboard_language = win11.get_keyboard_language()
+        elif keyboard.Key.__dict__['__module__'] == 'pynput.keyboard._xorg':
+            keyboard_language = ubuntu.get_keyboard_language()
         metadata = ['date: ' + date + '\n',
                     'node name: ' + platform.node() + '\n', 
                     'os: ' + platform.system() + '\n', 
                     'version: ' + platform.version() + '\n', 
                     'release: ' + platform.release() + '\n', 
                     'platform: ' + platform.platform() + '\n', 
-                    'processor: ' + platform.processor() + '\n', 
+                    'processor: ' + platform.processor() + '\n',
+
+                    'keyboard_language: ' + keyboard_language + '\n', 
+                    'os_language: ' + os_language_encoding[0] + '\n', 
+                    'os_encoding: ' + os_language_encoding[1] + '\n', 
+
+                    'ip: ' + ip_info["ip"] + '\n', 
+                    "hostname: " + ip_info["hostname"] + '\n', 
+                    "city: " + ip_info["city"] + '\n', 
+                    "region: " + ip_info["region"] + '\n', 
+                    "country: " + ip_info["country"] + '\n', 
+                    "loc: " + ip_info["loc"] + '\n', 
+                    "org: " + ip_info["org"] + '\n', 
+                    "postal: " + ip_info["postal"] + '\n', 
+                    "timezone: " + ip_info["timezone"] + '\n', 
+                    "readme: " + ip_info["readme"] + '\n', 
                     ] 
         metadatafile.writelines(metadata)
         metadatafile.close()
+
+    def get_ip_info(self):
+        ip_info = {"ip": None,
+                "hostname": None,
+                "city": None,
+                "region": None,
+                "country": None,
+                "loc": None,
+                "org": None,
+                "postal": None,
+                "timezone": None,
+                "readme": None,}
+        try:
+            result = subprocess.run(['curl', 'ipinfo.io'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+            ip_info = json.loads(result.stdout)
+        except subprocess.CalledProcessError as e:
+            print(f"An error occurred: {e}")
+            print("Failed to retrieve IP information")
+        return ip_info
 
     
