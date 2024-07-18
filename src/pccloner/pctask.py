@@ -101,14 +101,14 @@ class pcController():
                 'Button.middle': lambda position, *args: self.clickmiddle(position),
                 'Button.button8': lambda position, *args: self.backwards(position),
                 'Button.button9': lambda position, *args: self.forwards(position),
-                
                 'Button.left.double': lambda position, *args: self.doubleclickleft(position),
-                'Button.left.drag': lambda position, endposition: self.pyautogui_leftdrag(position, endposition), 
+                'Button.left.drag': lambda position, endposition, *args: self.pyautogui_leftdrag(position, endposition), 
+
                 #'Button.left.drag': lambda position, trajectory: self.leftdrag_following(position, trajectory),  
-                'Scroll.down': lambda position, *args: self.scrolldown(position),
-                'Scroll.up': lambda position, *args: self.scrollup(position),
-                'Scroll.left': lambda position, *args: self.scrollleft(position),
-                'Scroll.right': lambda position, *args: self.scrollright(position),
+                'Scroll.down': lambda position, endposition, steps, *args: self.scrolldown(position, steps),
+                'Scroll.up': lambda position, endposition, steps, *args: self.scrollup(position, steps),
+                'Scroll.left': lambda position, endposition, steps, *args: self.scrollleft(position, steps),
+                'Scroll.right': lambda position, endposition, steps, *args: self.scrollright(position, steps),
             }
         self.none_mouse = lambda position, endposition: print("invalid mouse action")
 
@@ -120,7 +120,9 @@ class pcController():
         # Press
         for action in actions:
             if 'Button.' in action or "Scroll." in action: 
-                self.mouse_mapping.get(action, self.none_mouse)(position, endposition)
+                steps = int(action.split('_')[-1] if "Scroll." in action else 0)
+                event = action.split('_')[0] 
+                self.mouse_mapping.get(event, self.none_mouse)(position, endposition, steps)
             else: 
                 key = self.classify_keystroke(action)
                 self.keyboard.press(key)
@@ -205,21 +207,21 @@ class pcController():
             t0 = t
         self.mouse.release(Button.left)
 
-    def scrollup(self, position):
+    def scrollup(self, position, steps):
         self.mouse.position = position
-        self.mouse.scroll(0, 1)
+        self.mouse.scroll(0, steps)
 
-    def scrolldown(self, position):
+    def scrolldown(self, position, steps):
         self.mouse.position = position
-        self.mouse.scroll(0, -1)
+        self.mouse.scroll(0, -steps)
 
-    def scrollright(self, position):
+    def scrollright(self, position, steps):
         self.mouse.position = position
-        self.mouse.scroll(1, 0)
+        self.mouse.scroll(steps, 0)
 
-    def scrollleft(self, position):
+    def scrollleft(self, position, steps):
         self.mouse.position = position
-        self.mouse.scroll(-1, 0)
+        self.mouse.scroll(-steps, 0)
 
 # A simpler approach would be not to do this preprocessing and do replay including releases
 # Avoiding hoykey, double clicks and drags detections 
