@@ -116,7 +116,7 @@ class pcController():
         if event != 'Button.left.drag' and trajectory != []:
             self.move_over_trajectory(position, trajectory)
 
-        actions = event.split('+')
+        actions = event.split(' ')
         # Press
         for action in actions:
             if 'Button.' in action or "Scroll." in action: 
@@ -303,7 +303,7 @@ class Preprocessing():
                 pgroup = basepressed + pgroups[i]
                 newevent = 'pressed ' + samplecopy.loc[pgroup[0], 'event'].replace('pressed ', '')
                 for ki in pgroup[1:]: 
-                    newevent += '+' + samplecopy.loc[ki, 'event'].replace('pressed ', '')
+                    newevent += ' ' + samplecopy.loc[ki, 'event'].replace('pressed ', '')
                 samplecopy.loc[pgroup[-1], 'event'] = newevent
                 keep_ixs.append(pgroup[-1])
                 if i+1 < len(pgroups):

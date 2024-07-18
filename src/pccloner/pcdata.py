@@ -40,23 +40,18 @@ class Collector:
             self.on_release = self.on_release_win11
             self.blockedkeys = [keyboard.Key.__dict__[kname] for kname in win11.blockedknames]
             self.previouskey = 0
-            locks = win11.LockStates()
-            locks.reset_all()
         elif keyboard.Key.__dict__['__module__'] == 'pynput.keyboard._xorg':
             self.mapping = ubuntu.mapping
             self.on_press = self.on_press_ubuntu
             self.on_release = self.on_release_ubuntu
-            while ubuntu.check_locks(): # Stop execution until caps and num locks are off
-                time.sleep(2)
-                os.system('clear')
 
     # Monitoring
     def start(self):
         print("Waiting for activation with ESC key ...")
         with keyboard.Listener(on_press=self.wait_esc) as wait:
             wait.join()
-
-        print("Monitoring is working ...")
+        self.locks_checking()
+        print("Great! Monitoring is working ...")
         self.savemetada()
         self.movelistener.start()  
 
@@ -67,15 +62,14 @@ class Collector:
              keyboard.Listener(on_press=self.on_press, on_release=self.on_release):
             while self.running:
                 self.lastscreen = (time.perf_counter() - self.start_time, pyautogui.screenshot())
-        print("Monitoring was ended ...")
         self.movelistener.stop()
+        print("Monitoring has finished, we are preparing the final data file ...")
         # Saving data at the end
         data_df = pd.DataFrame(self.data, columns =['timestamp', 'img_path', 'px', 'py', 'event', 'trajectory'])
         data_df.to_csv(self.sample_folder + 'raw_pcdata.csv', index=False)
-
         # Zipping data
-        shutil.make_archive(self.base_folder + self.sample_folder.split('/')[1], 'zip', self.sample_folder)
         print('Compressing data into a zip file ... it can take some time')
+        shutil.make_archive(self.base_folder + self.sample_folder.split('/')[1], 'zip', self.sample_folder)
 
         return data_df
 
@@ -162,6 +156,15 @@ class Collector:
         if key != keyboard.Key.esc: 
             return True
         return False
+    
+    def locks_checking(self): 
+        if keyboard.Key.__dict__['__module__'] == 'pynput.keyboard._win32':
+            locks = win11.LockStates()
+            locks.reset_all()
+        elif keyboard.Key.__dict__['__module__'] == 'pynput.keyboard._xorg':
+            while ubuntu.check_locks(): # Stop execution until caps and num locks are off
+                time.sleep(2)
+                os.system('clear')
 
     # Initialize folder to save data
     def create_incremented_folder(self, path):
