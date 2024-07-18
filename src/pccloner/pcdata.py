@@ -1,4 +1,4 @@
-import time, os, math, locale, subprocess, json
+import time, os, math, locale, subprocess, json, logging
 from pynput import keyboard, mouse
 import pyautogui
 import re
@@ -31,6 +31,7 @@ class Collector:
         self.vscrolls = {-1: 'Scroll.down', 1:'Scroll.up'}
         self.hscrolls = {-1: 'Scroll.left', 1:'Scroll.right'}
         self.sample_folder = self.create_incremented_folder(self.base_folder) + '/' 
+        self.logger = self.creating_logger()
         initial_df = pd.DataFrame({}, columns =['timestamp', 'img_path', 'px', 'py', 'event', 'trajectory']) 
         initial_df.to_csv(self.sample_folder + 'rawpcdata_temp.csv', index=False)
 
@@ -51,7 +52,7 @@ class Collector:
         with keyboard.Listener(on_press=self.wait_esc) as wait:
             wait.join()
         self.locks_checking()
-        print("Great! Monitoring is working ...")
+        print("Great! Monitoring has started! ")
         self.savemetada()
         self.movelistener.start()  
 
@@ -85,7 +86,7 @@ class Collector:
 
     def on_scroll(self, px, py, dx, dy):
         if dx == 0 and dy == 0:
-            print('Something weird happens both dx and dy are zero')
+            self.logger.info('Something weird happens both dx and dy are zero')
         else: 
             if dy != 0:
                 self.savedata(px, py, 
@@ -219,22 +220,37 @@ class Collector:
         metadatafile.close()
 
     def get_ip_info(self):
-        ip_info = {"ip": None,
-                "hostname": None,
-                "city": None,
-                "region": None,
-                "country": None,
-                "loc": None,
-                "org": None,
-                "postal": None,
-                "timezone": None,
-                "readme": None,}
+        ip_info = {"ip": '',
+                "hostname": '',
+                "city": '',
+                "region": '',
+                "country": '',
+                "loc": '',
+                "org": '',
+                "postal": '',
+                "timezone": '',
+                "readme": '',}
         try:
             result = subprocess.run(['curl', 'ipinfo.io'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
             ip_info = json.loads(result.stdout)
         except subprocess.CalledProcessError as e:
-            print(f"An error occurred: {e}")
-            print("Failed to retrieve IP information")
+            self.logger.info(f"An error occurred: {e}")
+            self.logger.info("Failed to retrieve IP information")
         return ip_info
+    
+    def creating_logger(self):
+        logger = logging.getLogger('pcdata_logger')
+        logger.setLevel(logging.INFO)  
+        file_handler = logging.FileHandler(self.sample_folder + 'pcdata.log', mode='x')
+        console_handler = logging.StreamHandler()
+        file_handler.setLevel(logging.INFO)
+        console_handler.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+        file_handler.setFormatter(formatter)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        logger.addHandler(console_handler)
+        return logger 
+
 
     
