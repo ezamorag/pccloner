@@ -95,21 +95,16 @@ class pcController():
     def __init__(self):
         self.mouse = mController()
         self.keyboard = kController()
-        self.mouse_mapping = {
-                'Button.left': lambda position, *args: self.clickleft(position),
-                'Button.right': lambda position, *args: self.clickright(position),
-                'Button.middle': lambda position, *args: self.clickmiddle(position),
-                'Button.button8': lambda position, *args: self.backwards(position),
-                'Button.button9': lambda position, *args: self.forwards(position),
-                'Button.left.double': lambda position, *args: self.doubleclickleft(position),
-                'Button.left.drag': lambda position, endposition, *args: self.pyautogui_leftdrag(position, endposition), 
-
-                #'Button.left.drag': lambda position, trajectory: self.leftdrag_following(position, trajectory),  
-                'Scroll.down': lambda position, endposition, steps, *args: self.scrolldown(position, steps),
-                'Scroll.up': lambda position, endposition, steps, *args: self.scrollup(position, steps),
-                'Scroll.left': lambda position, endposition, steps, *args: self.scrollleft(position, steps),
-                'Scroll.right': lambda position, endposition, steps, *args: self.scrollright(position, steps),
-            }
+        self.mousebuttons = ['Button.left','Button.right','Button.middle','Button.button8','Button.button9']
+        self.mousespecials = {'Button.left.double': lambda position, *args: self.doubleclickleft(position),
+                              'Button.left.drag': lambda position, endposition, *args: self.pyautogui_leftdrag(position, endposition), 
+                              #'Button.left.drag': lambda position, trajectory: self.leftdrag_following(position, trajectory),  
+                              }
+        self.scrolls = {'Scroll.down':  lambda position, steps: self.scrolldown(position, steps),
+                        'Scroll.up':    lambda position, steps: self.scrollup(position, steps),
+                        'Scroll.left':  lambda position, steps: self.scrollleft(position, steps),
+                        'Scroll.right': lambda position, steps: self.scrollright(position, steps),
+                        }
         self.none_mouse = lambda position, endposition: print("invalid mouse action")
 
     def run(self, event, position, endposition, delay, trajectory): 
@@ -119,16 +114,29 @@ class pcController():
         actions = event.split(' ')
         # Press
         for action in actions:
-            if 'Button.' in action or "Scroll." in action: 
-                steps = int(action.split('_')[-1] if "Scroll." in action else 0)
-                event = action.split('_')[0] 
-                self.mouse_mapping.get(event, self.none_mouse)(position, endposition, steps)
+            if action in self.mousebuttons: 
+                mbutton = action.replace('Button.','')
+                if mbutton in Button.__dict__.keys():    
+                    mbutton = Button.__dict__[mbutton]
+                self.mouse.position = position
+                self.mouse.press(mbutton)
+            elif action in self.mousespecials.keys(): 
+                self.mousespecials.get(event, self.none_mouse)(position, endposition)
+            elif "Scroll." in action: 
+                scrolltype, steps = action.split('_')
+                self.scrolls.get(scrolltype, self.none_mouse)(position, int(steps))
             else: 
                 key = self.classify_keystroke(action)
                 self.keyboard.press(key)
         # Release
         for action in actions[::-1]:
-            if 'Button.' in action or "Scroll." in action: 
+            if action in self.mousebuttons: 
+                mbutton = action.replace('Button.','')
+                if mbutton in Button.__dict__.keys():    
+                    mbutton = Button.__dict__[mbutton]
+                self.mouse.position = position
+                self.mouse.release(mbutton)
+            elif action in self.mousespecials.keys() or "Scroll." in action: 
                 pass
             else:
                 key = self.classify_keystroke(action)
@@ -154,26 +162,6 @@ class pcController():
         self.mouse.position = position
         for _, x, y in trajectory[::steps]: 
             pyautogui.moveTo(x,y)
-
-    def clickleft(self, position):
-        self.mouse.position = position
-        self.mouse.click(Button.left, 1)
-
-    def clickright(self, position):
-        self.mouse.position = position
-        self.mouse.click(Button.right, 1)
-
-    def clickmiddle(self, position):
-        self.mouse.position = position
-        self.mouse.click(Button.middle, 1)
-
-    def backwards(self, position):
-        self.mouse.position = position
-        self.mouse.click(Button.button8, 1)
-    
-    def forwards(self, position):
-        self.mouse.position = position
-        self.mouse.click(Button.button9, 1)
 
     def doubleclickleft(self, position):
         self.mouse.position = position
@@ -239,6 +227,7 @@ class Preprocessing():
     def run(self, sample): 
         s1 = sample.copy()                                                          # The order of following processing is important
         s1['trajectory'] = s1['trajectory'].map(lambda x: self.string2list(x))      # Convert a list represented as a string into a actual list
+        s1 = self.capsnumlocks_conversion(s1)                                       # Conversion according with num_lock and caps_lock states
         s1 = self.replace_drags(s1)                                                 # Detect drag events
         s1 = self.replace_doubleclicks(s1)                                          # Detect doubleclicks
         s1 = self.converts_shifted_events(s1)                                       # Convert shifted events which are different, but equivalent. 
@@ -252,6 +241,30 @@ class Preprocessing():
         s1['delay'] = delays
         actions = s1.reset_index(drop=True)                                     # Reset dataframe index
         return actions
+    
+    def capsnumlocks_conversion(self, sample):
+        samplecopy = sample.copy()
+        samplecopy = samplecopy.reset_index(drop=True)
+        numlock_flag = False
+        capslock_flag = False
+        for i, event in enumerate(samplecopy['event']): 
+            if event == 'pressed Key.caps_lock':
+                capslock_flag = not capslock_flag 
+            elif event == 'pressed Key.num_lock':
+                numlock_flag = not numlock_flag
+            elif '<65437>' in event: #Special case in Ubuntu only
+                if numlock_flag: 
+                    samplecopy.loc[i,'event'] = event.replace('<65437>', '5')
+                else:
+                    samplecopy.loc[i,'event'] = event.replace('<65437>', '')
+            elif len(event.replace('pressed ','')) == 1 or len(event.replace('released ','')) == 1:
+                if capslock_flag:
+                    samplecopy.loc[i,'event'] = event[:-1] + event[-1].upper()
+                else:
+                    samplecopy.loc[i,'event'] = event[:-1] + event[-1].lower()
+            else:
+                pass
+        return samplecopy 
     
     def converts_shifted_events(self, sample):
         """ Search for pressed and released events that are the same symbol because of shift key """
@@ -399,11 +412,12 @@ class Preprocessing():
         rBleft_indexes = sample.index[sample['event'].map(lambda x: 'released Button.left' == x)]
         drags_indexes = []
         for ix in rBleft_indexes:
-            length = len(sample.loc[ix,'trajectory'])
-            p1 = (sample.loc[ix-1,'px'],sample.loc[ix-1,'py'])
-            p2 = (sample.loc[ix,'px'], sample.loc[ix,'py'])
-            if (length >= self.length_th) and ((abs(p1[0]-p2[0]) >= self.minpixels_th) or (abs(p1[1] - p2[1]) >= self.minpixels_th)): 
-                drags_indexes.append(ix-1)
+            if sample['event'][ix-1] == 'pressed Button.left':
+                length = len(sample.loc[ix,'trajectory'])
+                p1 = (sample.loc[ix-1,'px'],sample.loc[ix-1,'py'])
+                p2 = (sample.loc[ix,'px'], sample.loc[ix,'py'])
+                if (length >= self.length_th) and ((abs(p1[0]-p2[0]) >= self.minpixels_th) or (abs(p1[1] - p2[1]) >= self.minpixels_th)): 
+                    drags_indexes.append(ix-1)
         return drags_indexes
     
     def replace_doubleclicks(self, sample):

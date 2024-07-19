@@ -179,7 +179,7 @@ class Collector:
             if match:
                 highest_num = max(highest_num, int(match.group(1)))
         # Create new folder
-        new_folder_name = f"sample{highest_num + 1}"
+        new_folder_name = "sample{:03d}".format(highest_num + 1)
         new_folder_path = os.path.join(path, new_folder_name)
         os.makedirs(new_folder_path)
         return new_folder_path
