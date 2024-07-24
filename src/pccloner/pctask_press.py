@@ -227,7 +227,6 @@ class Preprocessing():
     def run(self, sample): 
         s1 = sample.copy()                                                          # The order of following processing is important
         s1['trajectory'] = s1['trajectory'].map(lambda x: self.string2list(x))      # Convert a list represented as a string into a actual list
-        s1 = self.capsnumlocks_conversion(s1)                                       # Conversion according with num_lock and caps_lock states
         s1 = self.replace_drags(s1)                                                 # Detect drag events
         s1 = self.replace_doubleclicks(s1)                                          # Detect doubleclicks
         s1 = self.converts_shifted_events(s1)                                       # Convert shifted events which are different, but equivalent. 
@@ -243,6 +242,11 @@ class Preprocessing():
         return actions
     
     def capsnumlocks_conversion(self, sample):
+        """ This function is partially correct, don't use it"""
+        # It requires to be prepared for especial cases where user keep press caps_locks while they are writing
+        # I could n't understand the behavior of theses cases. 
+        # I decided to not use it, until I solve this problem. 
+        # The good thing is that for pctask_pr.py this function is not needed
         samplecopy = sample.copy()
         samplecopy = samplecopy.reset_index(drop=True)
         numlock_flag = False

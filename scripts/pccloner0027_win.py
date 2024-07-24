@@ -11,7 +11,7 @@ if __name__ == '__main__':
     print()
     x = input('Do you want to replay the previous task? ("yes"+enter / enter)')
     print(x)
-    if x == "yes":
+    if x.lower() == "yes":
         csv_paths = glob('data/*/raw_pcdata.csv')
         csv_paths.sort()
         print(csv_paths)

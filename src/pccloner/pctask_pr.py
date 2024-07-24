@@ -198,38 +198,13 @@ class Preprocessing():
     def run(self, sample): 
         s1 = sample.copy()                                                          # The order of following processing is important
         s1['trajectory'] = s1['trajectory'].map(lambda x: self.string2list(x))      # Convert a list represented as a string into a actual list
-        s1 = self.capsnumlocks_conversion(s1)                                       # Conversion according with num_lock and caps_lock states
         s1 = self.replace_drags(s1)                                                 # Detect drag events
         s1 = self.replace_doubleclicks(s1)                                          # Detect doubleclicks
         delays = s1['timestamp'][1:].values - s1['timestamp'][0:-1].values          # Calculating delays
         delays = np.append(delays,0.0)                                                
         s1['delay'] = delays
         actions = s1.reset_index(drop=True)                                     # Reset dataframe index
-        return actions
-    
-    def capsnumlocks_conversion(self, sample):
-        samplecopy = sample.copy()
-        samplecopy = samplecopy.reset_index(drop=True)
-        numlock_flag = False
-        capslock_flag = False
-        for i, event in enumerate(samplecopy['event']): 
-            if event == 'pressed Key.caps_lock':
-                capslock_flag = not capslock_flag 
-            elif event == 'pressed Key.num_lock':
-                numlock_flag = not numlock_flag
-            elif '<65437>' in event: #Special case in Ubuntu only
-                if numlock_flag: 
-                    samplecopy.loc[i,'event'] = event.replace('<65437>', '5')
-                else:
-                    samplecopy.loc[i,'event'] = event.replace('<65437>', '')
-            elif len(event.replace('pressed ','')) == 1 or len(event.replace('released ','')) == 1:
-                if capslock_flag:
-                    samplecopy.loc[i,'event'] = event[:-1] + event[-1].upper()
-                else:
-                    samplecopy.loc[i,'event'] = event[:-1] + event[-1].lower()
-            else:
-                pass
-        return samplecopy 
+        return actions 
        
     def string2list(self, string): 
         """ Convert the trajectory string into an actual python list"""
