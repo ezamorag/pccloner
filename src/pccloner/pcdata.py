@@ -17,6 +17,12 @@ import shutil
 
 #   Make easy installation for windows users using pip install 
 
+# timestamp at the event, 
+# img_path, screenshot just before the event, 
+# (px, py), the cursor coordinates when the event happens
+# event, the event
+# trajectory, the previous mouse trajectory before the event happens
+
 class Collector:
     def __init__(self, base_folder='data/', print_events = False):
         self.print_events = print_events

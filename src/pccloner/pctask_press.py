@@ -399,12 +399,12 @@ class Preprocessing():
         samplecopy = sample.copy()
         samplecopy['drag2px'] = len(samplecopy)*[None]
         samplecopy['drag2py'] = len(samplecopy)*[None]
-        for ix in self.find_drags(sample):
+        for ix in self.find_drags(samplecopy):
             samplecopy.loc[ix, 'event'] = 'pressed Button.left.drag'
             samplecopy.loc[ix+1, 'event'] = 'released Button.left.drag'
-            samplecopy.loc[ix, 'drag2px'] = sample.loc[ix+1, 'px']
-            samplecopy.loc[ix, 'drag2py'] = sample.loc[ix+1, 'py']
-            samplecopy.at[ix, 'trajectory'] = sample.loc[ix+1, 'trajectory']
+            samplecopy.loc[ix, 'drag2px'] = samplecopy.loc[ix+1, 'px']
+            samplecopy.loc[ix, 'drag2py'] = samplecopy.loc[ix+1, 'py']
+            samplecopy.at[ix, 'trajectory'] = samplecopy.loc[ix+1, 'trajectory']
             samplecopy.at[ix+1, 'trajectory'] = []
         return samplecopy
     
@@ -423,7 +423,7 @@ class Preprocessing():
     def replace_doubleclicks(self, sample):
         """ Transform the dataframe to encode double events """
         samplecopy = sample.copy()
-        for ix0,ix1 in self.find_doubleclicks(sample):
+        for ix0,ix1 in self.find_doubleclicks(samplecopy):
             samplecopy.loc[ix0, 'event'] = 'pressed Button.left.double'
             samplecopy.loc[ix1+1, 'event'] = 'released Button.left.double'
             samplecopy = samplecopy.drop([ix0+1, ix1])

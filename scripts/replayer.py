@@ -1,5 +1,5 @@
 from glob import glob 
-from pccloner.pctask import Replayer
+from pccloner.pctask_pr import Replayer
 import pandas as pd
 import argparse
 
@@ -12,7 +12,7 @@ parser.add_argument('--mousemoves', action=argparse.BooleanOptionalAction, help=
 args = parser.parse_args()
 
 if not args.csvpath:
-   print(glob('data/*/*.csv'))
+   print(glob('data/*/raw_pcdata.csv'))
    print('Select your stored task using the argument -p to give the path')
 else: 
    sample = pd.read_csv(args.csvpath)
