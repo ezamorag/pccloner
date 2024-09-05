@@ -3,23 +3,23 @@ When you execute a task on your PC, it captures mouse and keyboard actions, incl
  
 Supported Features:
 * Capable of replaying double clicks and drag motions.
-* Designed to replay almost all keystrokes (please report any unsupported key).
+* Designed to replay almost all keystrokes (please report any unsupported keys).
 * Tested on Ubuntu 20.04 and Windows 11.
-* Supports all hotkeys and sequences of hotkeys (please report any unsupported hotkey).
-* It records and replays the cursor trajectory before each keyboard and mouse event. This is important for activating some functionality by putting the cursor over a screen region.  
+* It records and replays the cursor's trajectory before each keyboard and mouse event.
 
-**Conditions for Optimal Performance**: The stored task must be replayed on the same computer, and the screen's initial state during replay should closely resemble the initially stored screen state.
+**Conditions for Optimal Performance**: The stored task must be replayed on the same computer, and the screen's initial state during replay should closely resemble the initial state when the task was recorded.
 
 Known Issues:
 * On Ubuntu 20.04: 
     1) Occasionally, the collector registers one extra scroll action than required, which does not accurately replicate the task.
-    2) At replaying time, pushing buttons to write over "Show Applications" does not work. The written words are sent to terminal.
-    3) If you use a hidden bar of tasks, then the replayer cannot activate it even fi this action was recorded.  
+    2) During replay, attempting to type over "Show Applications" does not work; the input is sent to the terminal instead.
+    3) If you use a hidden taskbar, the replayer cannot activate it, even if this action was recorded. 
 * On Windows 11:
     1) Scrolling isn't detected when using a touchpad; please use a mouse instead.
-    2) The function (fn) key is not recognized, but detected.
-    3) The alt_gr key can generate sequences of pairs (alt_gr + ctrl_l), leading to unnecessary storage of screenshots.
-* Sometimes, in the process of minimizing a window, the size and location of the window are different w.r.t the original stored task. The replayer could fail in this case. 
+    2) The function (fn) key is detected but not recognized.
+    3) The alt_gr key can generate sequences of pairs (alt_gr + ctrl_l), leading to the unnecessary storage of screenshots.
+* General issues:
+    1) Sometimes, when minimizing a window, the size and location of the window differ from the original stored task, which could cause the replayer to fail.
    
 
 ## Authors
@@ -33,7 +33,13 @@ On ubuntu: it requires to install gnome-screenshot.
 sudo apt install gnome-screenshot
 ```
 
-## Usage
+## Basic usage
+1. Download and run the file ```python testing.py``` in your environment where pcpcloner is installed. 
+2. Press the ESC key to start recording. Remember to press the ESC key again to stop the recording. The program will create a folder called 'data' where all task-related data will be saved. 
+3. If you want to replay the task, type 'yes' when prompted with 'Do you want to replay the previous task? and press enter. 
+
+
+## Advanced usage
 1. Write a python script with following lines:
 ```bash
 File: collector.py
@@ -51,7 +57,7 @@ if __name__ == '__main__':
 File: replayer.py
 
 from glob import glob 
-from pccloner.pctask import Replayer
+from pccloner.pctask_pr import Replayer
 import pandas as pd
 import argparse
 
@@ -64,7 +70,7 @@ parser.add_argument('--mousemoves', action=argparse.BooleanOptionalAction, help=
 args = parser.parse_args()
 
 if not args.csvpath:
-   print(glob('data/*/*.csv'))
+   print(glob('data/*/raw_pcdata.csv'))
    print('Select your stored task using the argument -p to give the path')
 else: 
    sample = pd.read_csv(args.csvpath)
