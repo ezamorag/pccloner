@@ -128,7 +128,7 @@ class Collector:
         if key != keyboard.Key.esc: 
             if not ((key in self.blockedkeys) and (key == self.previouskey)):
                 key = self.mapping.get(str(key), key)
-                keystring = str(key).strip("'") if str(key) != "'" else str(key)
+                keystring = self.extract_char(key)
                 px, py = self.mouse.position
                 self.savedata(px, py, event=f'pressed {keystring}', trajectory=self.moves)
         else: 
@@ -140,10 +140,16 @@ class Collector:
             if key == self.previouskey:
                 self.previouskey = 0
             key = self.mapping.get(str(key), key)
-            keystring = str(key).strip("'") if str(key) != "'" else str(key)
+            keystring = self.extract_char(key)
             px, py = self.mouse.position
             self.savedata(px, py, event=f'released {keystring}', trajectory=self.moves)
 
+    def extract_char(self, key):
+        try: 
+            keystring = key.char
+        except:
+            keystring = str(key).strip("'") 
+        return keystring
 
     def savedata(self, px, py, event, trajectory=[]):
         timestamp = time.perf_counter() - self.start_time
