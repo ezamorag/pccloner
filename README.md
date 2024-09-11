@@ -14,6 +14,7 @@ Known Issues:
     1) Occasionally, the collector registers one extra scroll action than required, which does not accurately replicate the task.
     2) During replay, attempting to type over "Show Applications" does not work; the input is sent to the terminal instead.
     3) If you use a hidden taskbar, the replayer cannot activate it, even if this action was recorded. 
+    4) The 'Caps Lock' key is saved correctly, but it is not triggered during the task replay.
 * On Windows 11:
     1) Scrolling isn't detected when using a touchpad; please use a mouse instead.
     2) The function (fn) key is detected but not recognized.
