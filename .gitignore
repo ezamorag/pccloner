@@ -1,7 +1,6 @@
 
 src/pccloner/__pycache__/
 data/
-dist/
 viz/
 src/pccloner.egg-info/
 archive/
