@@ -115,7 +115,10 @@ class pcController():
                 self.mouse.press(mbutton)
             else: 
                 key = self.classify_keystroke(action)
-                self.keyboard.press(key)
+                try:
+                    self.keyboard.press(key)
+                except:
+                    print(f"The key {key} wasn't pressed")
         elif 'released ' in event: 
             action = event.replace('released ', '')
             if action in self.mousebuttons: 
@@ -126,7 +129,10 @@ class pcController():
                 self.mouse.release(mbutton)
             else:
                 key = self.classify_keystroke(action)
-                self.keyboard.release(key)
+                try:
+                    self.keyboard.release(key)
+                except:
+                    print(f"The key {key} wasn't released")
         elif 'Scroll.' in event: 
             scrolltype, steps = event.split('_')
             self.scrolls.get(scrolltype)(position, int(steps))
