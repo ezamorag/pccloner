@@ -8,4 +8,5 @@ archive/
 testing_data/
 scripts/build/
 scripts/__pycache__/
-scripts/*.spec
+*.spec
+build/
