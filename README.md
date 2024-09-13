@@ -42,8 +42,6 @@ sudo apt install gnome-screenshot
 ## Using apps
 You can download the executable programs without installing the pccloner PyPI package. These apps are for both Windows and Ubuntu users. You can find them in the 'dist' folder in this repository. In an Ubuntu terminal, run ```./pccloner_applinux_[VERSION]```, then activate and deactivate it by pressing the ESC key. On Windows, simply run the file ```pccloner_appwin_[VERSION].exe``` by double-clicking it, then activate and deactivate it by pressing the ESC key."
 
-Changes made:
-
 ## Advanced usage
 1. Write a python script with following lines:
 ```bash
