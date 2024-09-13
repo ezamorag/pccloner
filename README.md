@@ -39,6 +39,10 @@ sudo apt install gnome-screenshot
 2. Press the ESC key to start recording. Remember to press the ESC key again to stop the recording. The program will create a folder called 'data' where all task-related data will be saved. 
 3. If you want to replay the task, type 'yes' when prompted with 'Do you want to replay the previous task? and press enter. 
 
+## Using apps
+You can download the executable programs without installing the pccloner PyPI package. These apps are for both Windows and Ubuntu users. You can find them in the 'dist' folder in this repository. In an Ubuntu terminal, run ```./pccloner_applinux_[VERSION]```, then activate and deactivate it by pressing the ESC key. On Windows, simply run the file ```pccloner_appwin_[VERSION].exe``` by double-clicking it, then activate and deactivate it by pressing the ESC key."
+
+Changes made:
 
 ## Advanced usage
 1. Write a python script with following lines:
