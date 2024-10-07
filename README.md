@@ -78,5 +78,5 @@ else:
    task1.execute(viz=args.viz, screen_flag=args.screen, mousemoves_flag=args.mousemoves)
 ```
 
-## Using apps exclusively for collecting PC data
+## Using apps 
 You can download the executable programs without installing the pccloner PyPI package. These apps are for both Windows and Ubuntu users. You can find them in the 'dist' folder in this repository. In an Ubuntu terminal, run ```./pccloner_applinux_[VERSION]```, then activate it by pressing the ESC key once, and deactivate it by pressing and releasing the ESC key three times consecutively. On Windows, simply run the file ```pccloner_appwin_[VERSION].exe``` by double-clicking it, then activate and deactivate it as previously mentioned."
