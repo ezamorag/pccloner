@@ -127,17 +127,20 @@ class LockStates:
         # Get the current Caps Lock state
         is_caps_lock_on = self.get_capslock_state(self.VK_CAPITAL)
         if is_caps_lock_on:
-            print('The caps_lock was on, we turn it off for you')
+            print('The caps_lock was on, we turn it off for you.')
+            print('This is a requirement at the start, but you can use it during monitoring') 
             self.toggle_capslock(self.VK_CAPITAL)
 
         is_numlock_on = self.get_numlock_state(self.VK_NUMLOCK)
         if is_numlock_on:
             print('The num_lock was on, we turn it off for you')
+            print('This is a requirement at the start, but you can use it during monitoring') 
             self.toggle_numlock(self.VK_NUMLOCK)
 
         is_scroll_lock_on = self.get_scrlock_state(self.VK_SCROLL)
         if is_scroll_lock_on:
             print('The scroll_lock was on, we turn it off for you')
+            print('This is a requirement at the start, but you can use it during monitoring') 
             self.toggle_scrlock(self.VK_SCROLL)
 
     def get_capslock_state(self, vk):

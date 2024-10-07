@@ -27,12 +27,15 @@ def check_locks():
         stop=False
         if x == 50:  #num on
             print("Please turn off NUM_LOCK before continue!")
+            print("This is a requirement at the start. You can use it during monitoring")
             stop = True
     elif x==49 or x==51:  #caps on
         print("Please turn off CAPS_LOCK before continue!")
+        print("This is a requirement at the start. You can use it during monitoring")
         stop = True
         if x == 51:  #num on
             print("Please turn off NUM_LOCK before continue!")
+            print("This is a requirement at the start. You can use it during monitoring")
             stop = True
     return stop
 

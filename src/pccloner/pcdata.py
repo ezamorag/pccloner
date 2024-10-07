@@ -24,8 +24,9 @@ import shutil
 # trajectory, the previous mouse trajectory before the event happens
 
 class Collector:
-    def __init__(self, base_folder='data/', print_events = False):
+    def __init__(self, base_folder='data/', print_events = False, saving_end = True):
         self.print_events = print_events
+        self.saving_end = saving_end
         self.mouse = mouse.Controller()
         self.counter = 0
         self.lastscreen = None
@@ -39,7 +40,7 @@ class Collector:
         self.sample_folder = self.create_incremented_folder(self.base_folder) + '/' 
         self.logger = self.creating_logger()
         initial_df = pd.DataFrame({}, columns =['timestamp', 'img_path', 'px', 'py', 'event', 'trajectory']) 
-        initial_df.to_csv(self.sample_folder + 'rawpcdata_temp.csv', index=False)
+        initial_df.to_csv(self.sample_folder + 'raw_pcdata.csv', index=False)
 
         if keyboard.Key.__dict__['__module__'] == 'pynput.keyboard._win32':
             self.mapping = win11.mapping
@@ -62,23 +63,30 @@ class Collector:
         self.savemetada()
         self.movelistener.start()  
 
-        self.running = True
+        self.ending = 3*[False]
         self.start_time = time.perf_counter()
         self.lastscreen = (time.perf_counter() - self.start_time, pyautogui.screenshot())
         with mouse.Listener(on_click=self.on_click, on_scroll=self.on_scroll), \
-             keyboard.Listener(on_press=self.on_press, on_release=self.on_release):
-            while self.running:
+            keyboard.Listener(on_press=self.on_press, on_release=self.on_release):
+            while self.check_ending():
                 self.lastscreen = (time.perf_counter() - self.start_time, pyautogui.screenshot())
         self.movelistener.stop()
         print("Monitoring has finished, we are preparing the final data file ...")
-        # Saving data at the end
         data_df = pd.DataFrame(self.data, columns =['timestamp', 'img_path', 'px', 'py', 'event', 'trajectory'])
-        data_df.to_csv(self.sample_folder + 'raw_pcdata.csv', index=False)
+        # Saving data at the end
+        if self.saving_end: 
+            data_df.to_csv(self.sample_folder + 'raw_pcdata_end.csv', index=False)
         # Zipping data
         print('Compressing data into a zip file ... it can take some time')
         shutil.make_archive(self.base_folder + self.sample_folder.split('/')[1], 'zip', self.sample_folder)
 
         return data_df
+
+    def check_ending(self):
+        cond = True
+        for c in self.ending: 
+            cond *= (c == 'Key.esc')
+        return not cond
 
     # Mouse events
     def on_move(self, x, y):
@@ -108,41 +116,39 @@ class Collector:
             
     # Ubuntu
     def on_press_ubuntu(self, key):
-        if key != keyboard.Key.esc: 
-            key = self.mapping.get(str(key), key)
-            keystring = str(key).strip("'") if str(key) != "'" else str(key)
-            px, py = self.mouse.position
-            self.savedata(px, py, event=f'pressed {keystring}', trajectory=self.moves)
-        else: 
-            self.running = False
+        key = self.mapping.get(str(key), key)
+        keystring = str(key).strip("'") if str(key) != "'" else str(key)
+        px, py = self.mouse.position
+        self.savedata(px, py, event=f'pressed {keystring}', trajectory=self.moves)
             
     def on_release_ubuntu(self, key):
-        if key != keyboard.Key.esc: 
-            key = self.mapping.get(str(key), key)
-            keystring = str(key).strip("'") if str(key) != "'" else str(key)
-            px, py = self.mouse.position
-            self.savedata(px, py, event=f'released {keystring}', trajectory=self.moves)
+        key = self.mapping.get(str(key), key)
+        keystring = str(key).strip("'") if str(key) != "'" else str(key)
+        px, py = self.mouse.position
+        self.savedata(px, py, event=f'released {keystring}', trajectory=self.moves)
+
+        self.ending.pop(0)
+        self.ending.append(keystring)
 
     # Windows11
     def on_press_win11(self, key):
-        if key != keyboard.Key.esc: 
-            if not ((key in self.blockedkeys) and (key == self.previouskey)):
-                key = self.mapping.get(str(key), key)
-                keystring = self.extract_char(key)
-                px, py = self.mouse.position
-                self.savedata(px, py, event=f'pressed {keystring}', trajectory=self.moves)
-        else: 
-            self.running = False
+        keymapped = self.mapping.get(str(key), key)
+        keystring = self.extract_char(keymapped)
+        px, py = self.mouse.position
+        if not ((key in self.blockedkeys) and (key == self.previouskey)):
+            self.savedata(px, py, event=f'pressed {keystring}', trajectory=self.moves)
         self.previouskey = key
 
-    def on_release_win11(self, key):
-        if key != keyboard.Key.esc: 
-            if key == self.previouskey:
-                self.previouskey = 0
-            key = self.mapping.get(str(key), key)
-            keystring = self.extract_char(key)
-            px, py = self.mouse.position
-            self.savedata(px, py, event=f'released {keystring}', trajectory=self.moves)
+    def on_release_win11(self, key): 
+        if key == self.previouskey:
+            self.previouskey = 0
+        key = self.mapping.get(str(key), key)
+        keystring = self.extract_char(key)
+        px, py = self.mouse.position
+        self.savedata(px, py, event=f'released {keystring}', trajectory=self.moves)
+
+        self.ending.pop(0)
+        self.ending.append(keystring)
 
     def extract_char(self, key):
         try: 
@@ -158,7 +164,7 @@ class Collector:
         self.data.append((timestamp, img_path, px, py, event, trajectory))
         img.save(img_path)
         temp_row = pd.DataFrame([self.data[-1]]) 
-        with open(self.sample_folder + 'rawpcdata_temp.csv', 'a') as f:
+        with open(self.sample_folder + 'raw_pcdata.csv', 'a') as f:
             temp_row.to_csv(f, index=False, header=False, lineterminator='\n')
         if self.print_events:
             print(timestamp, event)
@@ -176,7 +182,7 @@ class Collector:
             locks.reset_all()
         elif keyboard.Key.__dict__['__module__'] == 'pynput.keyboard._xorg':
             while ubuntu.check_locks(): # Stop execution until caps and num locks are off
-                time.sleep(2)
+                time.sleep(0.5)
                 os.system('clear')
 
     # Initialize folder to save data
