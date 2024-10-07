@@ -36,25 +36,22 @@ sudo apt install gnome-screenshot
 
 ## Basic usage
 1. Download and run the file ```python testing.py``` in your environment where pcpcloner is installed. 
-2. Press the ESC key to start recording. Remember to press the ESC key again to stop the recording. The program will create a folder called 'data' where all task-related data will be saved. 
+2. Press the ESC key to start recording. To stop the recording, press and release the ESC key three times consecutively. The program will create a folder called 'data' where all task-related data will be saved. 
 3. If you want to replay the task, type 'yes' when prompted with 'Do you want to replay the previous task? and press enter. 
-
-## Using apps
-You can download the executable programs without installing the pccloner PyPI package. These apps are for both Windows and Ubuntu users. You can find them in the 'dist' folder in this repository. In an Ubuntu terminal, run ```./pccloner_applinux_[VERSION]```, then activate and deactivate it by pressing the ESC key. On Windows, simply run the file ```pccloner_appwin_[VERSION].exe``` by double-clicking it, then activate and deactivate it by pressing the ESC key."
 
 ## Advanced usage
 1. Write a python script with following lines:
 ```bash
-File: collector.py
+File: pccollector.py
 
 from pccloner.pcdata import Collector
 
 if __name__ == '__main__':
-    pc = Collector()
-    data_df = pc.start()
+    pc = Collector(print_events=False, saving_end = False)
+    pc.start()
 ```
 2. Run the previous script ```python collector.py```
-3. Press the ESC key to start recording. And don't forget to press again the ESC key to terminate the recording. This code will create a folder called "data" where it will save all the data related to your task.
+3. Press the ESC key to start recording. And don't forget to terminate the recording by pressing and releasing the ESC key three times consecutively. This code will create a folder called "data" where it will save all the data related to your task.
 4. Use the next code to replay your previous stored task ```python replayer.py -p [YOUR_PATH_TO_CSV_FILE]```. At replaying, you can exit the process pressing ESC. 
 ```bash
 File: replayer.py
@@ -80,3 +77,6 @@ else:
    task1 = Replayer(sample, data_dir='./')
    task1.execute(viz=args.viz, screen_flag=args.screen, mousemoves_flag=args.mousemoves)
 ```
+
+## Using apps exclusively for collecting PC data
+You can download the executable programs without installing the pccloner PyPI package. These apps are for both Windows and Ubuntu users. You can find them in the 'dist' folder in this repository. In an Ubuntu terminal, run ```./pccloner_applinux_[VERSION]```, then activate it by pressing the ESC key once, and deactivate it by pressing and releasing the ESC key three times consecutively. On Windows, simply run the file ```pccloner_appwin_[VERSION].exe``` by double-clicking it, then activate and deactivate it as previously mentioned."

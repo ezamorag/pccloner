@@ -4,7 +4,7 @@ import pandas as pd
 from glob import glob 
 
 if __name__ == '__main__':
-    pc = Collector(print_events=True)
+    pc = Collector(print_events=True, saving_end=True)
     data_df = pc.start()
     
     input('Press enter!')
