@@ -1,4 +1,4 @@
-import time, os, math, locale, subprocess, json, logging
+import time, os, math, locale, subprocess, json, logging, zipfile
 from pynput import keyboard, mouse
 import pyautogui
 import re
@@ -6,7 +6,6 @@ import pandas as pd
 import datetime
 from . import win11, ubuntu
 import platform
-import shutil
 
 # Future work: 
 #   Include PC sound, microphone, webcam
@@ -78,7 +77,8 @@ class Collector:
             data_df.to_csv(self.sample_folder + 'raw_pcdata_end.csv', index=False)
         # Zipping data
         print('Compressing data into a zip file ... it can take some time')
-        shutil.make_archive(self.base_folder + self.sample_folder.split('/')[1], 'zip', self.sample_folder)
+        #shutil.make_archive(self.base_folder + self.sample_folder.split('/')[1], 'zip', self.sample_folder)
+        zip_folder_in_chunks(self.sample_folder, self.base_folder + self.sample_folder.split('/')[1], chunk_size=2*1024*1024*1024)  #Chunks of 2GB
 
         return data_df
 
@@ -271,4 +271,44 @@ class Collector:
         return logger 
 
 
+def zip_folder_in_chunks(folder_path, output_zipfile_base, chunk_size):
+    current_chunk = 1
+    current_size = 0
+    output_zipfile = f"{output_zipfile_base}_part{current_chunk}.zip"
     
+    # Create a new zip file
+    zipf = zipfile.ZipFile(output_zipfile, 'w', zipfile.ZIP_DEFLATED)
+
+    # Walk through the folder structure
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            # Calculate the file size
+            file_size = os.path.getsize(file_path)
+            
+            # If adding the file exceeds the chunk size, create a new zip file
+            if current_size + file_size > chunk_size:
+                zipf.close()  # Close the current zip file
+                current_chunk += 1
+                output_zipfile = f"{output_zipfile_base}_part{current_chunk}.zip"
+                zipf = zipfile.ZipFile(output_zipfile, 'w', zipfile.ZIP_DEFLATED)
+                current_size = 0  # Reset the current size
+
+            # Add the file to the zip
+            arcname = os.path.relpath(file_path, folder_path)  # Preserve the folder structure
+            zipf.write(file_path, arcname)
+            current_size += file_size  # Update the current size of the zip
+
+    zipf.close()  # Close the final zip file
+
+def extract_zip_chunks(output_zipfile_base, output_folder):
+    current_chunk = 1
+    while True:
+        zip_file_name = f"{output_zipfile_base}_part{current_chunk}.zip"
+        if not os.path.exists(zip_file_name):
+            break  # No more zip files to extract
+
+        # Extract the current chunk
+        with zipfile.ZipFile(zip_file_name, 'r') as zipf:
+            zipf.extractall(output_folder)
+        current_chunk += 1

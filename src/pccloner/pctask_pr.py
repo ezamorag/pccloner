@@ -156,7 +156,7 @@ class pcController():
                 key = None   
         else:
             print(f'The action {action} is unknown')
-            key = None 
+            key = action 
         return key
     
     def move_over_trajectory(self, trajectory, steps = 4):

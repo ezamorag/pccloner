@@ -9,3 +9,4 @@ scripts/build/
 scripts/__pycache__/
 *.spec
 build/
+dist/*.zip

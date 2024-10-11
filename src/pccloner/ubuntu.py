@@ -1,3 +1,5 @@
+# https://manpages.ubuntu.com/manpages/bionic/man3/keysyms.3tk.html
+
 mapping = {
 '<269025048>': 'Key.f4', 
 '<269025062>': 'Key.f6', 
@@ -5,6 +7,7 @@ mapping = {
 '<269025053>': 'calculator_button', 
 '<65027>': 'Key.alt_gr', 
 '<65056>': 'Key.tab',   # when shift+tap
+'<65301>': 'Sys_Req',   # cut print-screen fn+mayus+tab
 #'<65437>': '5' or None, # button 5 in calculator keyboard (5 if num_lock is not set, nothing if set)
 "['´']": "´", # "['´']": '´',  # tilde   
 "['¨']": "¨", # "['¨']": '¨',  # tilde con shift_r
