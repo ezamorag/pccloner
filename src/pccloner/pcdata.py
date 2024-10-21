@@ -6,6 +6,7 @@ import pandas as pd
 import datetime
 from . import win11, ubuntu
 import platform
+import py7zr
 
 # Future work: 
 #   Include PC sound, microphone, webcam
@@ -39,7 +40,7 @@ class Collector:
         self.sample_folder = self.create_incremented_folder(self.base_folder) + '/' 
         self.logger = self.creating_logger()
         initial_df = pd.DataFrame({}, columns =['timestamp', 'img_path', 'px', 'py', 'event', 'trajectory']) 
-        initial_df.to_csv(self.sample_folder + 'raw_pcdata.csv', index=False)
+        initial_df.to_csv(self.sample_folder + 'raw_pcdata.csv', index=False, encoding='utf-8')
 
         if keyboard.Key.__dict__['__module__'] == 'pynput.keyboard._win32':
             self.mapping = win11.mapping
@@ -74,11 +75,12 @@ class Collector:
         data_df = pd.DataFrame(self.data, columns =['timestamp', 'img_path', 'px', 'py', 'event', 'trajectory'])
         # Saving data at the end
         if self.saving_end: 
-            data_df.to_csv(self.sample_folder + 'raw_pcdata_end.csv', index=False)
+            data_df.to_csv(self.sample_folder + 'raw_pcdata_end.csv', index=False, encoding='utf-8')
         # Zipping data
-        print('Compressing data into a zip file ... it can take some time')
+        print('Compressing data ... it might take some minutes')
         #shutil.make_archive(self.base_folder + self.sample_folder.split('/')[1], 'zip', self.sample_folder)
-        zip_folder_in_chunks(self.sample_folder, self.base_folder + self.sample_folder.split('/')[1], chunk_size=2*1024*1024*1024)  #Chunks of 2GB
+        #zip_folder_in_chunks(self.sample_folder, self.base_folder + self.sample_folder.split('/')[1], chunk_size=2*1024*1024*1024)  #Chunks of 2GB
+        compress_to_7z(input_path=self.sample_folder, output_archive=self.base_folder + self.sample_folder.split('/')[1] + '.7z', chunk_size=2*1024*1024*1024) #Chunks of 2GB
 
         return data_df
 
@@ -165,7 +167,7 @@ class Collector:
         img.save(img_path)
         temp_row = pd.DataFrame([self.data[-1]]) 
         with open(self.sample_folder + 'raw_pcdata.csv', 'a') as f:
-            temp_row.to_csv(f, index=False, header=False, lineterminator='\n')
+            temp_row.to_csv(f, index=False, header=False, lineterminator='\n', encoding='utf-8')
         if self.print_events:
             print(timestamp, event)
         self.counter += 1
@@ -312,3 +314,47 @@ def extract_zip_chunks(output_zipfile_base, output_folder):
         with zipfile.ZipFile(zip_file_name, 'r') as zipf:
             zipf.extractall(output_folder)
         current_chunk += 1
+
+### Slower, but less memory space e.g. 6.3min to compress 3.8GB into 388MB
+def compress_to_7z(input_path, output_archive, chunk_size=2*1024*1024*1024): 
+    """
+    Compresses a file or directory into a .7z archive and splits it into chunks.
+    """
+    with py7zr.SevenZipFile(output_archive, 'w') as archive:
+        archive.writeall(input_path, os.path.basename(input_path))
+    file_size = os.path.getsize(output_archive)
+    if file_size > chunk_size:
+        print(f"File size: {file_size}. Splitting the archive into {chunk_size} byte chunks.")
+        with open(output_archive, 'rb') as f:
+            chunk_num = 1
+            while chunk := f.read(chunk_size):
+                chunk_filename = f"{output_archive}.{chunk_num:03d}"
+                with open(chunk_filename, 'wb') as chunk_file:
+                    chunk_file.write(chunk)
+                chunk_num += 1
+        os.remove(output_archive)
+        print(f"Split into {chunk_num - 1} chunks.")
+    else:
+        print(f"No need to split. Archive size is within the limit.")
+
+
+def join_7z_chunks(output_archive, chunk_folder):
+    """
+    Joins chunked .7z files back into a single archive.
+    :param output_archive: The name of the output combined .7z archive.
+    :param chunk_folder: The folder where the chunk files are stored.
+    """
+    chunk_number = 1
+    with open(output_archive, 'wb') as output_file:
+        while True:
+            chunk_filename = os.path.join(chunk_folder, f"{output_archive}.{chunk_number:03d}")
+            if not os.path.exists(chunk_filename):
+                print(f"Chunk {chunk_filename} does not exist. Stopping.")
+                break
+            
+            print(f"Joining chunk {chunk_filename}...")
+            with open(chunk_filename, 'rb') as chunk_file:
+                output_file.write(chunk_file.read())
+            
+            chunk_number += 1
+    print(f"All chunks joined into {output_archive}.")
