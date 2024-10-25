@@ -1,12 +1,13 @@
 import time, os, math, locale, subprocess, json, logging, zipfile
 from pynput import keyboard, mouse
-import pyautogui
 import re
 import pandas as pd
 import datetime
 from . import win11, ubuntu
 import platform
 import py7zr
+import mss
+from PIL import Image
 
 # Future work: 
 #   Include PC sound, microphone, webcam
@@ -63,14 +64,16 @@ class Collector:
         self.savemetada()
         self.movelistener.start()  
 
-        self.ending = 3*[False]
-        self.start_time = time.perf_counter()
-        self.lastscreen = (time.perf_counter() - self.start_time, pyautogui.screenshot())
-        with mouse.Listener(on_click=self.on_click, on_scroll=self.on_scroll), \
-            keyboard.Listener(on_press=self.on_press, on_release=self.on_release):
-            while self.check_ending():
-                self.lastscreen = (time.perf_counter() - self.start_time, pyautogui.screenshot())
-        self.movelistener.stop()
+        with mss.mss() as sct:
+            monitors = sct.monitors
+            self.ending = 3*[False]
+            self.start_time = time.perf_counter()
+            self.lastscreen = (time.perf_counter() - self.start_time, sct.grab(monitors[0]))  #Save virtual monitor that it's a merge of all real monitors
+            with mouse.Listener(on_click=self.on_click, on_scroll=self.on_scroll), \
+                keyboard.Listener(on_press=self.on_press, on_release=self.on_release):
+                while self.check_ending():
+                    self.lastscreen = (time.perf_counter() - self.start_time, sct.grab(monitors[0]))
+            self.movelistener.stop()
         print("Monitoring has finished, we are preparing the final data file ...")
         data_df = pd.DataFrame(self.data, columns =['timestamp', 'img_path', 'px', 'py', 'event', 'trajectory'])
         # Saving data at the end
@@ -161,10 +164,11 @@ class Collector:
 
     def savedata(self, px, py, event, trajectory=[]):
         timestamp = time.perf_counter() - self.start_time
-        t, img = self.lastscreen
+        t, screenshot = self.lastscreen
         img_path = self.sample_folder + 'screen{:010}_{}.jpg'.format(self.counter, t)
         self.data.append((timestamp, img_path, px, py, event, trajectory))
-        img.save(img_path)
+        img = Image.frombytes("RGB", screenshot.size, screenshot.rgb)
+        img.save(img_path, "JPEG")  # We use JPEG for speed and less memory-demanded
         temp_row = pd.DataFrame([self.data[-1]]) 
         with open(self.sample_folder + 'raw_pcdata.csv', 'a') as f:
             temp_row.to_csv(f, index=False, header=False, lineterminator='\n', encoding='utf-8')

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='pccloner',
-    version='0.1.6',
+    version='0.1.7',
     description= "Clone your repetitive PC tasks",
     py_modules = ['pccloner.pcdata', 'pccloner.pctask_press', 'pccloner.pctask_pr', 'pccloner.win11', 'pccloner.ubuntu'],
     packages = find_packages(),
@@ -19,6 +19,7 @@ setup(
                         'keyboard >= 0.13.5',
                         'pandas >= 2.1.4',
                         'py7zr >= 0.22.0',
+                        'mss >= 9.0.2',
                        ],
     
     url="https://github.com/ezamorag/pccloner",
