@@ -29,9 +29,10 @@ Known Issues:
 ```bash
 pip install pccloner
 ```
-On ubuntu: it requires to install gnome-screenshot.
+On ubuntu: it might require to install gnome-screenshot and curl in some systems. 
 ```bash
 sudo apt install gnome-screenshot
+sudo apt intall curl
 ```
 
 ## Basic usage

@@ -204,7 +204,8 @@ class Preprocessing():
     def run(self, sample): 
         s1 = sample.copy()                                                          # The order of following processing is important
         s1['trajectory'] = s1['trajectory'].map(lambda x: self.string2list(x))      # Convert a list represented as a string into a actual list
-        #s1 = self.capsnumlocks_conversion(s1)                                       # Conversion according with num_lock and caps_lock states
+        #s1 = self.capslocks_conversion(s1)                                         # Conversion according with caps_lock states
+        s1 = self.numlocks_conversion(s1)                                           # Conversion according with num_lock state
         s1 = self.replace_drags(s1)                                                 # Detect drag events
         s1 = self.replace_doubleclicks(s1)                                          # Detect doubleclicks
         delays = s1['timestamp'][1:].values - s1['timestamp'][0:-1].values          # Calculating delays
@@ -213,29 +214,39 @@ class Preprocessing():
         actions = s1.reset_index(drop=True)                                     # Reset dataframe index
         return actions 
     
-    def capsnumlocks_conversion(self, sample):
+    def capslocks_conversion(self, sample):
         """ This function is partially correct, don't use it"""
         # It requires to be prepared for especial cases where user keeps press caps_locks while they are writing
         # I couldn't understand the behavior of theses cases. I decided to not use it, until I solve this problem. 
         samplecopy = sample.copy()
         samplecopy = samplecopy.reset_index(drop=True)
-        numlock_flag = False
         capslock_flag = False
         for i, event in enumerate(samplecopy['event']): 
             if event == 'pressed Key.caps_lock':
                 capslock_flag = not capslock_flag 
-            elif event == 'pressed Key.num_lock':
-                numlock_flag = not numlock_flag
-            elif '<65437>' in event: #Special case in Ubuntu only
-                if numlock_flag: 
-                    samplecopy.loc[i,'event'] = event.replace('<65437>', '5')
-                else:
-                    samplecopy.loc[i,'event'] = event.replace('<65437>', '')
             elif len(event.replace('pressed ','')) == 1 or len(event.replace('released ','')) == 1:
                 if capslock_flag:
                     samplecopy.loc[i,'event'] = event[:-1] + event[-1].upper()
                 else:
                     samplecopy.loc[i,'event'] = event[:-1] + event[-1].lower()
+            else:
+                pass
+        return samplecopy
+    
+    def numlocks_conversion(self, sample):
+        """ Convert the event <65437> into 5 or None. It's necessary only for Ubuntu """
+        # It doesn't effect on data from Windows because <65437> doesn't
+        samplecopy = sample.copy()
+        samplecopy = samplecopy.reset_index(drop=True)
+        numlock_flag = False
+        for i, event in enumerate(samplecopy['event']): 
+            if event == 'pressed Key.num_lock':
+                numlock_flag = not numlock_flag
+            elif '<65437>' in event: #Special case in Ubuntu only
+                if numlock_flag: 
+                    samplecopy.loc[i,'event'] = event.replace('<65437>', '5')
+                else:
+                    samplecopy.loc[i,'event'] = event.replace('<65437>', 'None')
             else:
                 pass
         return samplecopy
